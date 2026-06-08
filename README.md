@@ -103,13 +103,11 @@ Cambia entre la vista de Openbank y la de IBKR. Cada cuenta mantiene de forma in
 #### KPIs
 Cuatro tarjetas con un selector de período en la esquina superior derecha (**Mes** / **Trimestre** / **Año**):
 - **Saldo actual** — último saldo del CSV (siempre el balance real, sin filtrar)
-- **Ingresos** — suma de tipos de ingreso en el período seleccionado
-- **Gastos** — suma de registros tipo `Gasto` en el período seleccionado
-- **Balance** — ingresos − gastos del período
+- **Ingresos** — suma exclusivamente de `Nómina` en el período seleccionado
+- **Gastos** — suma exclusivamente de `Gasto` en el período seleccionado
+- **Balance** — (todos los que suman: `Ingreso`, `Nómina`, `Devolución`, `Apuestas_r`, `Inversión_r`) − (todos los que restan: `Gasto`, `Apuestas`, `Inversión`, `Transferencia`)
 
 Cada KPI de ingresos/gastos/balance muestra un delta `↑ +X€ vs ant.` comparando con el período equivalente anterior (mes anterior, trimestre anterior, año anterior). Para gastos la lógica se invierte: bajar es positivo. Cambiar el período solo actualiza las tarjetas, sin reconstruir la página.
-
-> `Apuestas`, `Inversión` y `Transferencia` no se contabilizan ni en ingresos ni en gastos porque son movimientos de capital, no de gasto/ahorro real.
 
 #### Filtros por panel
 
@@ -132,12 +130,12 @@ Los paneles con filtro temporal propio son: **Evolución del saldo**, **Evoluci�
 - Filtro temporal de panel (mismo sistema que el resto de paneles)
 
 #### Gráfico: Evolución mensual
-Barras verdes (ingresos) y rojas (gastos) por mes, con línea amarilla de balance neto. Respeta el filtro temporal del panel.
+Barras verdes (ingresos) y rojas (gastos) por mes, con línea amarilla de balance neto. Respeta el filtro temporal del panel. Usa los mismos criterios que el KPI Balance: ingresos = todos los tipos que suman (excluyendo `Saldo Inicial`), gastos = todos los tipos que restan.
 
 #### Gráfico: Top 20 gastos por concepto
 Barras horizontales con los 20 conceptos de tipo `Gasto` con mayor valor, ordenados de mayor a menor. Tiene dos modos seleccionables con botones:
 
-- **Media/mes** — muestra el gasto medio mensual de cada concepto. Solo se incluyen conceptos que aparecen en **al menos 2 meses distintos** (filtra compras puntuales/esporádicas). El valor mostrado es `total / nº meses con al menos 1 aparición`.
+- **Media/mes** — muestra el gasto medio mensual de cada concepto. El divisor es el tamaño de la ventana seleccionada: `1m` → ÷1, `3m` → ÷3, `6m` → ÷6, `Todo`/año → número de meses distintos con algún gasto en el período.
 - **Total** — muestra el total acumulado de cada concepto en el período seleccionado.
 
 #### Análisis de Apuestas
@@ -189,10 +187,10 @@ Muestra un diálogo de confirmación con los detalles del último registro crono
 
 ### Vista IBKR
 
-Vista simplificada centrada en inversiones:
+Vista centrada en inversiones:
 - **KPI saldo actual** — último balance real de la cuenta
-- **Gráfico de saldo** — evolución del balance con media móvil de 30 días y filtro temporal de panel
 - **Análisis de Inversiones** — tabla de posiciones cerradas con filtro temporal propio
+- **Formulario: Añadir movimiento** — misma funcionalidad que en Openbank, con los tipos de IBKR (`Gasto`, `Ingreso`, `Inversión`, `Inversión_r`)
 
 #### Análisis de Inversiones
 

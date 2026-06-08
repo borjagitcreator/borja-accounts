@@ -132,11 +132,14 @@ Los paneles con filtro temporal propio son: **Evolución del saldo**, **Evoluci�
 #### Gráfico: Evolución mensual
 Barras verdes (ingresos) y rojas (gastos) por mes, con línea amarilla de balance neto. Respeta el filtro temporal del panel. Usa los mismos criterios que el KPI Balance: ingresos = todos los tipos que suman (excluyendo `Saldo Inicial`), gastos = todos los tipos que restan.
 
-#### Gráfico: Top 20 gastos por concepto
-Barras horizontales con los 20 conceptos de tipo `Gasto` con mayor valor, ordenados de mayor a menor. Tiene dos modos seleccionables con botones:
+#### Gráfico: Gastos por concepto
+Dos gráficos en paralelo (50 % / 50 %) que comparten el mismo filtro temporal y se actualizan juntos:
 
-- **Media/mes** — muestra el gasto medio mensual de cada concepto. El divisor es el tamaño de la ventana seleccionada: `1m` → ÷1, `3m` → ÷3, `6m` → ÷6, `Todo`/año → número de meses distintos con algún gasto en el período.
-- **Total** — muestra el total acumulado de cada concepto en el período seleccionado.
+**Ranking (izquierda)** — barras horizontales con los 20 conceptos de tipo `Gasto` con mayor valor, ordenados de mayor a menor. Tiene dos modos:
+- **Media/mes** — gasto medio mensual de cada concepto. El divisor es el tamaño de la ventana: `1m` → ÷1, `3m` → ÷3, `6m` → ÷6, `Todo`/año → meses distintos con algún gasto en el período.
+- **Total** — total acumulado de cada concepto en el período seleccionado.
+
+**Distribución / Donut (derecha)** — gráfico de anillo con los 14 conceptos de mayor gasto total más una categoría "Otros" que agrupa el resto. Muestra siempre el peso porcentual absoluto (no cambia con el modo Media/Total del ranking). Los porcentajes aparecen dentro de cada sector en blanco.
 
 #### Análisis de Apuestas
 Tabla con las rondas de apuestas **cerradas** (que tienen al menos un `Cobro apuesta`). Las rondas abiertas no aparecen. Respeta el filtro temporal del panel (solo muestra rondas cuyo cierre cae dentro del período).
@@ -234,7 +237,7 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 - **Todo el análisis corre en el frontend.** El backend solo hace CRUD y recálculo de saldo. No hay queries ni lógica de negocio en el servidor.
 - **Filtros por panel, no por página.** Cada panel temporal (saldo, mensual, gastos, apuestas, inversiones) y el buscador de movimientos tienen estado independiente. Cambiar un filtro o buscar lanza una actualización quirúrgica del DOM solo en ese panel — el formulario de añadir movimientos nunca se reconstruye.
 - **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required`: es un `<div id="add-form">` y el envío se dispara con el `onclick` del botón (`submitMov()`), validando en JS. En el Firefox del entorno, los popups nativos de `<select>` y `<input type="date">` dejaban de abrirse cuando el control estaba dentro de un `<form>` con `required` (el resto de selects/fechas de la página —buscador, modal— nunca tuvieron ese combo y siempre funcionaron). Si se vuelve a envolver en `<form>`/`required`, el bug reaparece.
-- **`color-scheme: dark`** está definido en `:root` y en `input, select` para que los popups nativos (calendario, desplegables, scrollbars) se rendericen en tema oscuro.
+- **`color-scheme: light`** está definido en `:root` y en `input, select` para que los popups nativos (calendario, desplegables, scrollbars) se rendericen en tema claro.
 - **Layout de objetos Plotly.** La función `baseLayout()` devuelve un objeto fresco en cada llamada. Compartir el mismo objeto entre charts causa mutación y ejes rotos.
 - **Saldo chart:** usa `xaxis.type: 'date'` explícito y recibe siempre el historial completo (sin filtrar).
 - **Chart mensual:** usa `xaxis.type: 'category'` porque los meses son strings `YYYY-MM`.

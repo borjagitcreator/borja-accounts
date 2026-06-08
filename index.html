@@ -1063,19 +1063,21 @@ function chartGastos(rows) {
   const L = baseLayout();
 
   Plotly.newPlot('c-gastos', [{
-    x: valores, y: conceptos, type: 'bar', orientation: 'h',
+    x: valores, y: conceptos.map(c => `<b>${c}</b>`), type: 'bar', orientation: 'h',
     text: valores.map(t => t.toFixed(2) + '€'), textposition: 'outside',
     cliponaxis: false,
     textfont: { color: '#24292f', size: 12 },
     constraintext: 'none',
+    customdata: conceptos,
     marker: { color: valores, colorscale: 'Teal', showscale: false },
-    hovertemplate: `%{y}: <b>%{x:,.2f}${hoverSuffix}</b><extra></extra>`
+    hovertemplate: `%{customdata}: <b>%{x:,.2f}${hoverSuffix}</b><extra></extra>`
   }], {
     ...L,
     hovermode: 'closest',
     margin: { l: 140, r: 120, t: 10, b: 36 },
     xaxis: { ...L.xaxis, type: 'linear', ticksuffix: '€', range: [0, maxV * 1.45] },
-    yaxis: { ...L.yaxis, automargin: true, ticks: 'outside', ticklen: 14, tickcolor: 'rgba(0,0,0,0)' },
+    yaxis: { ...L.yaxis, automargin: true, ticks: 'outside', ticklen: 14, tickcolor: 'rgba(0,0,0,0)',
+             tickfont: { color: '#24292f', size: 13 } },
     showlegend: false
   }, { responsive: true, displayModeBar: false });
 }
@@ -1099,23 +1101,24 @@ function chartDonut(rows) {
   const rest   = sorted.slice(14).reduce((s, [, v]) => s + v, 0);
   if (rest > 0) top.push(['Otros', r2(rest)]);
 
-  const labels = top.map(([c]) => c);
-  const values = top.map(([, v]) => v);
+  const labelsOrig = top.map(([c]) => c);
+  const values     = top.map(([, v]) => v);
 
   Plotly.newPlot('c-donut', [{
     type: 'pie', hole: 0.48,
-    labels, values, sort: false,
-    hovertemplate: '<b>%{label}</b><br>%{value:,.2f}€  ·  %{percent}<extra></extra>',
-    textinfo: 'percent',
-    textfont: { size: 10, color: '#ffffff' },
-    insidetextorientation: 'radial',
+    labels: labelsOrig.map(l => `<b>${l}</b>`), values, sort: false,
+    customdata: labelsOrig,
+    hovertemplate: '<b>%{customdata}</b><br>%{value:,.2f}€  ·  %{percent}<extra></extra>',
+    texttemplate: '<b>%{percent}</b>',
+    textfont: { size: 13, color: '#ffffff' },
+    insidetextorientation: 'horizontal',
     marker: { line: { color: '#ffffff', width: 1.5 } },
   }], {
     paper_bgcolor: '#ffffff',
     font: { family: 'Inter, system-ui', color: '#24292f', size: 11 },
     margin: { l: 10, r: 10, t: 10, b: 10 },
     legend: { orientation: 'v', x: 1.02, y: 0.5, xanchor: 'left', yanchor: 'middle',
-              font: { size: 10 }, bgcolor: 'rgba(0,0,0,0)' },
+              font: { size: 12 }, bgcolor: 'rgba(0,0,0,0)' },
     showlegend: true,
   }, { responsive: true, displayModeBar: false });
 }

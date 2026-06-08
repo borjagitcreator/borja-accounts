@@ -7,20 +7,20 @@
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #21262d;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --green: #2ea043;
-      --green-bright: #56d364;
-      --red: #da3633;
-      --red-bright: #ff7b72;
-      --blue: #388bfd;
-      --purple: #bf91f3;
-      --yellow: #e3b341;
+      color-scheme: light;
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --surface2: #f4f5f7;
+      --border: #d0d7de;
+      --text: #24292f;
+      --muted: #57606a;
+      --green: #1a7f37;
+      --green-bright: #166534;
+      --red: #cf222e;
+      --red-bright: #b91c1c;
+      --blue: #0969da;
+      --purple: #8250df;
+      --yellow: #9a6700;
       --radius: 8px;
     }
 
@@ -241,16 +241,16 @@
       font-weight: 600;
       white-space: nowrap;
     }
-    .b-gasto        { background: rgba(218,54,51,.15);  color: #ff7b72; }
-    .b-ingreso      { background: rgba(46,160,67,.15);  color: #56d364; }
-    .b-nomina       { background: rgba(56,139,253,.15); color: #79c0ff; }
-    .b-devolucion   { background: rgba(46,160,67,.15);  color: #56d364; }
-    .b-apuestas     { background: rgba(227,179,65,.15); color: #e3b341; }
-    .b-apuestasr    { background: rgba(57,211,83,.15);  color: #39d353; }
-    .b-inversion    { background: rgba(191,145,243,.15);color: #bf91f3; }
-    .b-inversionr   { background: rgba(57,211,83,.15);  color: #39d353; }
-    .b-transferencia{ background: rgba(148,163,184,.15);color: #94a3b8; }
-    .b-saldo        { background: rgba(56,139,253,.15); color: #79c0ff; }
+    .b-gasto        { background: rgba(207,34,46,.10);  color: #b91c1c; }
+    .b-ingreso      { background: rgba(26,127,55,.10);  color: #166534; }
+    .b-nomina       { background: rgba(9,105,218,.10);  color: #1e40af; }
+    .b-devolucion   { background: rgba(26,127,55,.10);  color: #166534; }
+    .b-apuestas     { background: rgba(154,103,0,.12);  color: #92400e; }
+    .b-apuestasr    { background: rgba(26,127,55,.10);  color: #166534; }
+    .b-inversion    { background: rgba(130,80,223,.10); color: #5b21b6; }
+    .b-inversionr   { background: rgba(26,127,55,.10);  color: #166534; }
+    .b-transferencia{ background: rgba(87,96,106,.10);  color: #374151; }
+    .b-saldo        { background: rgba(9,105,218,.10);  color: #1e40af; }
 
     /* ── FORM ── */
     .form-body {
@@ -271,7 +271,7 @@
     }
 
     input, select {
-      color-scheme: dark;
+      color-scheme: light;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -390,8 +390,8 @@
       max-width: 360px;
     }
     .toast.on { transform: translateY(0); opacity: 1; }
-    .toast.ok  { background: #1a4731; border: 1px solid var(--green); color: var(--green-bright); }
-    .toast.err { background: #4a1515; border: 1px solid var(--red);   color: var(--red-bright); }
+    .toast.ok  { background: #dcfce7; border: 1px solid var(--green); color: var(--green-bright); }
+    .toast.err { background: #fee2e2; border: 1px solid var(--red);   color: var(--red-bright); }
 
     /* ── MISC ── */
     .loading { padding: 60px; text-align: center; color: var(--muted); }
@@ -493,12 +493,12 @@ const displayTipo = t => DISPLAY_TIPO[t] || t;
 
 function baseLayout() {
   return {
-    paper_bgcolor: '#161b22',
-    plot_bgcolor:  '#161b22',
-    font: { family: 'Inter, system-ui', color: '#e6edf3', size: 11 },
+    paper_bgcolor: '#ffffff',
+    plot_bgcolor:  '#ffffff',
+    font: { family: 'Inter, system-ui', color: '#24292f', size: 11 },
     margin: { l: 50, r: 16, t: 10, b: 36 },
-    xaxis: { gridcolor: 'rgba(255,255,255,0.06)', tickfont: { color: '#8b949e', size: 10 } },
-    yaxis: { gridcolor: 'rgba(255,255,255,0.06)', tickfont: { color: '#8b949e', size: 10 } },
+    xaxis: { gridcolor: 'rgba(0,0,0,0.07)', tickfont: { color: '#57606a', size: 10 } },
+    yaxis: { gridcolor: 'rgba(0,0,0,0.07)', tickfont: { color: '#57606a', size: 10 } },
     legend: { orientation: 'h', y: 1.1, x: 0, font: { size: 11 } },
     hovermode: 'x unified'
   };
@@ -608,6 +608,7 @@ function refreshPanel(panel) {
     chartMensual(filtered);
   } else if (panel === 'gastos') {
     chartGastos(filtered);
+    chartDonut(filtered);
   } else if (panel === 'apuestas') {
     const el = document.getElementById('apuestas-body');
     if (el) el.innerHTML = apuestasBody(filtered);
@@ -762,7 +763,7 @@ function render(acc, rows) {
         <div class="chart-card full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:10px">
-              <div class="chart-label" style="margin-bottom:0">Top 20 gastos por concepto</div>
+              <div class="chart-label" style="margin-bottom:0">Gastos por concepto</div>
               <div style="display:flex;gap:4px" id="pf-gastos">${panelFilterBar('gastos', rows)}</div>
             </div>
             <div style="display:flex;gap:6px">
@@ -770,7 +771,16 @@ function render(acc, rows) {
               <button class="fbtn gastos-mode-btn ${gastosMode==='total'?'active':''}" data-mode="total" onclick="setGastosMode('total')">Total</button>
             </div>
           </div>
-          <div id="c-gastos" style="height:580px"></div>
+          <div style="display:flex;gap:14px">
+            <div style="flex:1;min-width:0">
+              <div class="chart-label" style="margin-bottom:6px">Top 20 · Ranking</div>
+              <div id="c-gastos" style="height:520px"></div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="chart-label" style="margin-bottom:6px">Distribución</div>
+              <div id="c-donut" style="height:520px"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -837,6 +847,7 @@ function render(acc, rows) {
       chartSaldo(applyFilter(rows, panelFilters.saldo));
       chartMensual(applyFilter(rows, panelFilters.mensual));
       chartGastos(applyFilter(rows, panelFilters.gastos));
+      chartDonut(applyFilter(rows, panelFilters.gastos));
     });
 
   } else {
@@ -946,20 +957,20 @@ function chartSaldo(rows) {
     {
       x: dates, y: saldos, type: 'scatter', mode: 'lines',
       name: `Saldo (${eur(actual)})`,
-      line: { color: '#388bfd', width: 2.5 },
+      line: { color: '#0969da', width: 2.5 },
       hovertemplate: '%{x|%d/%m/%y}: <b>%{y:,.2f}€</b><extra></extra>'
     },
     {
       x: dates, y: media, type: 'scatter', mode: 'lines',
       name: 'Media 30d',
-      line: { color: '#ff7b72', width: 1.5, dash: 'dash' },
+      line: { color: '#cf222e', width: 1.5, dash: 'dash' },
       opacity: 0.7,
       hovertemplate: '%{y:,.2f}€<extra>Media 30d</extra>'
     }
   ], {
     ...L,
     xaxis: { ...L.xaxis, type: 'date' },
-    yaxis: { ...L.yaxis, ticksuffix: '€', zeroline: true, zerolinecolor: 'rgba(255,255,255,.12)' }
+    yaxis: { ...L.yaxis, ticksuffix: '€', zeroline: true, zerolinecolor: 'rgba(0,0,0,.1)' }
   }, { responsive: true, displayModeBar: false });
 }
 
@@ -980,19 +991,19 @@ function chartMensual(rows) {
   Plotly.newPlot('c-mensual', [
     {
       x: meses, y: ing, type: 'bar', name: 'Ingresos',
-      marker: { color: 'rgba(46,160,67,.55)' },
+      marker: { color: 'rgba(26,127,55,.65)' },
       hovertemplate: '%{y:,.2f}€<extra>Ingresos</extra>'
     },
     {
       x: meses, y: gas.map(g => -g), type: 'bar', name: 'Gastos',
-      marker: { color: 'rgba(218,54,51,.45)' },
+      marker: { color: 'rgba(207,34,46,.55)' },
       customdata: gas,
       hovertemplate: '%{customdata:,.2f}€<extra>Gastos</extra>'
     },
     {
       x: meses, y: bal, type: 'scatter', mode: 'lines+markers',
       name: 'Balance',
-      line: { color: '#e3b341', width: 2, dash: 'dot' },
+      line: { color: '#9a6700', width: 2, dash: 'dot' },
       marker: { size: 5 },
       hovertemplate: '%{y:,.2f}€<extra>Balance</extra>'
     }
@@ -1000,7 +1011,7 @@ function chartMensual(rows) {
     ...L,
     barmode: 'overlay',
     xaxis: { ...L.xaxis, type: 'category' },
-    yaxis: { ...L.yaxis, ticksuffix: '€', zeroline: true, zerolinecolor: 'rgba(255,255,255,.12)' }
+    yaxis: { ...L.yaxis, ticksuffix: '€', zeroline: true, zerolinecolor: 'rgba(0,0,0,.1)' }
   }, { responsive: true, displayModeBar: false });
 }
 
@@ -1055,7 +1066,7 @@ function chartGastos(rows) {
     x: valores, y: conceptos, type: 'bar', orientation: 'h',
     text: valores.map(t => t.toFixed(2) + '€'), textposition: 'outside',
     cliponaxis: false,
-    textfont: { color: '#e6edf3', size: 12 },
+    textfont: { color: '#24292f', size: 12 },
     constraintext: 'none',
     marker: { color: valores, colorscale: 'Teal', showscale: false },
     hovertemplate: `%{y}: <b>%{x:,.2f}${hoverSuffix}</b><extra></extra>`
@@ -1066,6 +1077,46 @@ function chartGastos(rows) {
     xaxis: { ...L.xaxis, type: 'linear', ticksuffix: '€', range: [0, maxV * 1.45] },
     yaxis: { ...L.yaxis, automargin: true, ticks: 'outside', ticklen: 14, tickcolor: 'rgba(0,0,0,0)' },
     showlegend: false
+  }, { responsive: true, displayModeBar: false });
+}
+
+function chartDonut(rows) {
+  const gastos = rows.filter(r => r.Tipo === 'Gasto' && r.Total != null && !isNaN(r.Total));
+  if (!gastos.length) return;
+
+  const byConcepto = {};
+  for (const r of gastos) {
+    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
+    byConcepto[r.Concepto] += r.Total;
+  }
+
+  const sorted = Object.entries(byConcepto)
+    .map(([c, t]) => [c, r2(t)])
+    .filter(([, t]) => t > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  const top    = sorted.slice(0, 14);
+  const rest   = sorted.slice(14).reduce((s, [, v]) => s + v, 0);
+  if (rest > 0) top.push(['Otros', r2(rest)]);
+
+  const labels = top.map(([c]) => c);
+  const values = top.map(([, v]) => v);
+
+  Plotly.newPlot('c-donut', [{
+    type: 'pie', hole: 0.48,
+    labels, values, sort: false,
+    hovertemplate: '<b>%{label}</b><br>%{value:,.2f}€  ·  %{percent}<extra></extra>',
+    textinfo: 'percent',
+    textfont: { size: 10, color: '#ffffff' },
+    insidetextorientation: 'radial',
+    marker: { line: { color: '#ffffff', width: 1.5 } },
+  }], {
+    paper_bgcolor: '#ffffff',
+    font: { family: 'Inter, system-ui', color: '#24292f', size: 11 },
+    margin: { l: 10, r: 10, t: 10, b: 10 },
+    legend: { orientation: 'v', x: 1.02, y: 0.5, xanchor: 'left', yanchor: 'middle',
+              font: { size: 10 }, bgcolor: 'rgba(0,0,0,0)' },
+    showlegend: true,
   }, { responsive: true, displayModeBar: false });
 }
 

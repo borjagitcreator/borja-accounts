@@ -1257,7 +1257,7 @@ function computeInversiones(rows) {
 // ─────────────────────────────────────────────
 function renderMovimientos(rows) {
   if (!rows.length) return '<div class="empty">Sin movimientos.</div>';
-  const sorted = [...rows].sort((a, b) => b.Fecha.localeCompare(a.Fecha));
+  const sorted = [...rows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
   const isNeg  = r => TIPOS_NEGATIVOS.has(r.Tipo);
   return `<table>
     <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class="r">Importe</th><th class="r">Saldo</th></tr></thead>

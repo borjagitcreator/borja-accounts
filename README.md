@@ -113,6 +113,8 @@ Cada KPI de ingresos/gastos/balance muestra un delta `↑ +X€ vs ant.` compara
 
 Cada panel de datos tiene sus propios botones de filtro temporal integrados en su cabecera. Los filtros son independientes entre paneles: puedes ver el gráfico mensual del último trimestre mientras la tabla de movimientos muestra todo el historial.
 
+**El filtro por defecto de todos los paneles es `3m` (últimos 90 días).** El panel de gastos arranca además en modo **Media/mes**.
+
 Opciones disponibles (se ocultan si no hay datos en ese rango):
 - `Todo` — todos los registros del historial
 - `6m` — últimos 180 días
@@ -142,18 +144,31 @@ Dos gráficos en paralelo (50 % / 50 %) que comparten el mismo filtro temporal y
 **Distribución / Donut (derecha)** — gráfico de anillo con los 14 conceptos de mayor gasto total más una categoría "Otros" que agrupa el resto. Muestra siempre el peso porcentual absoluto (no cambia con el modo Media/Total del ranking). Los porcentajes aparecen dentro de cada sector en blanco.
 
 #### Análisis de Apuestas
-Tabla con las rondas de apuestas **cerradas** (que tienen al menos un `Cobro apuesta`). Las rondas abiertas no aparecen. Respeta el filtro temporal del panel (solo muestra rondas cuyo cierre cae dentro del período).
+
+Sección con KPIs de resumen y dos subsecciones: posiciones abiertas e historial cerrado.
+
+**Strip de KPIs (lifetime, no afectado por el filtro de período):**
+- **Total apostado** — suma de todas las entradas `Apuestas` históricas
+- **P&L neto** — balance acumulado de todas las apuestas cerradas
+- **Win rate** — porcentaje de apuestas cerradas con balance positivo
+- **En juego ahora** — posiciones abiertas actuales (concepto con `Apuestas` pero sin `Cobro apuesta`)
+
+> Los KPIs son siempre históricos completos. El filtro de período solo controla qué filas aparecen en la tabla de historial.
+
+**Posiciones abiertas** — tabla con las rondas que todavía no tienen cobro. Botón **Cerrar** en cada fila: abre un modal pre-rellenado con el concepto y la banca, donde se introduce el importe recibido y la fecha de cierre. Al confirmar se crea automáticamente el `Cobro apuesta` (`Apuestas_r`) correspondiente sin necesidad de añadirlo manualmente. Si la pérdida es total, se puede introducir 0 €.
+
+**Historial cerrado** — tabla filtrada por fecha de cierre (`fr`) según el filtro de período activo:
 
 | Columna     | Descripción                                            |
 |-------------|--------------------------------------------------------|
 | Concepto    | Nombre de la ronda (ej: "B365 - 12")                   |
 | Inicio      | Fecha del primer `Apuestas` de esa ronda               |
-| Retorno     | Fecha del último `Cobro apuesta` de esa ronda          |
+| Cierre      | Fecha del último `Cobro apuesta` de esa ronda          |
 | Banca       | Total apostado en esa ronda                            |
 | Devuelto    | Total retornado en esa ronda                           |
 | Balance     | Devuelto − Banca                                       |
 | Crec.       | Crecimiento porcentual de la banca en esa ronda        |
-| Bal. Hist.  | Balance acumulado hasta esa ronda (cumsum)             |
+| Bal. Hist.  | Balance acumulado hasta esa ronda (cumsum histórico)   |
 | Crec. Hist. | Crecimiento histórico acumulado respecto a banca total |
 
 #### Tabla de movimientos y buscador
@@ -168,7 +183,6 @@ Con cualquier campo de búsqueda activo se muestran todos los resultados coincid
 
 #### Formulario: Añadir movimiento
 A la derecha de la tabla de movimientos. Campos:
-Campos:
 - **Fecha** — por defecto hoy
 - **Tipo** — desplegable con los tipos disponibles para Openbank (nombres de UI)
 - **Concepto** — texto libre con autocompletado contextual
@@ -192,22 +206,45 @@ Muestra un diálogo de confirmación con los detalles del último registro crono
 
 Vista centrada en inversiones:
 - **KPI saldo actual** — último balance real de la cuenta
-- **Análisis de Inversiones** — tabla de posiciones cerradas con filtro temporal propio
+- **Análisis de Inversiones** — sección con KPIs y tablas de posiciones (ver abajo)
 - **Formulario: Añadir movimiento** — misma funcionalidad que en Openbank, con los tipos de IBKR (`Gasto`, `Ingreso`, `Inversión`, `Inversión_r`)
 
 #### Análisis de Inversiones
+
+Misma estructura que el Análisis de Apuestas: strip de KPIs lifetime + tabla de posiciones abiertas con botón Cerrar + historial filtrado por fecha de cierre.
+
+**Strip de KPIs (lifetime):**
+- **Total invertido** — suma de todas las entradas `Inversión` históricas
+- **P&L neto** — balance acumulado de todas las posiciones cerradas
+- **ROI total** — ROI histórico acumulado sobre el total invertido
+- **En cartera ahora** — posiciones abiertas actuales
+
+**Posiciones abiertas** — botón **Cerrar** abre un modal para registrar el retorno. Se crea automáticamente el `Retorno inv.` (`Inversión_r`) correspondiente. Permite 0 € para pérdida total.
+
+**Historial cerrado** (filtrado por fecha de cierre):
 
 | Columna    | Descripción                                     |
 |------------|-------------------------------------------------|
 | Concepto   | Nombre de la posición/cartera (ej: "Cartera 1") |
 | Inicio     | Fecha de la primera `Inversión`                 |
-| Retorno    | Fecha del último `Retorno inv.`                 |
+| Cierre     | Fecha del último `Retorno inv.`                 |
 | Invertido  | Total invertido                                 |
 | Devuelto   | Total retornado                                 |
 | Balance    | Devuelto − Invertido                            |
 | ROI        | Return on Investment porcentual                 |
-| Bal. Hist. | Balance acumulado (cumsum)                      |
+| Bal. Hist. | Balance acumulado (cumsum histórico)            |
 | ROI Hist.  | ROI histórico acumulado sobre el total invertido|
+
+---
+
+### Cerrar posición (modal)
+
+El botón **Cerrar** en cualquier posición abierta (apuesta o inversión) abre un modal con:
+- Concepto y banca/capital invertido (solo lectura, pre-rellenado)
+- Campo para el importe recibido (acepta 0 € para pérdida total)
+- Campo de fecha de cierre (por defecto hoy)
+
+Al confirmar se crea automáticamente la entrada `Apuestas_r` o `Inversión_r` con el mismo concepto, sin necesidad de usar el formulario manual de añadir movimiento.
 
 ---
 
@@ -236,6 +273,7 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 
 - **Todo el análisis corre en el frontend.** El backend solo hace CRUD y recálculo de saldo. No hay queries ni lógica de negocio en el servidor.
 - **Filtros por panel, no por página.** Cada panel temporal (saldo, mensual, gastos, apuestas, inversiones) y el buscador de movimientos tienen estado independiente. Cambiar un filtro o buscar lanza una actualización quirúrgica del DOM solo en ese panel — el formulario de añadir movimientos nunca se reconstruye.
+- **KPIs de apuestas/inversiones son lifetime.** Los cálculos de P&L, win rate y ROI se hacen siempre sobre `data` completo, no sobre las filas filtradas. Usar filas filtradas por período causa un bug silencioso: si la apuesta se colocó antes del corte pero se cerró dentro, `banca = 0` y el P&L aparece inflado. El filtro de período solo controla qué filas se muestran en la tabla de historial (filtrado por fecha de cierre `fr`).
 - **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required`: es un `<div id="add-form">` y el envío se dispara con el `onclick` del botón (`submitMov()`), validando en JS. En el Firefox del entorno, los popups nativos de `<select>` y `<input type="date">` dejaban de abrirse cuando el control estaba dentro de un `<form>` con `required` (el resto de selects/fechas de la página —buscador, modal— nunca tuvieron ese combo y siempre funcionaron). Si se vuelve a envolver en `<form>`/`required`, el bug reaparece.
 - **`color-scheme: light`** está definido en `:root` y en `input, select` para que los popups nativos (calendario, desplegables, scrollbars) se rendericen en tema claro.
 - **Layout de objetos Plotly.** La función `baseLayout()` devuelve un objeto fresco en cada llamada. Compartir el mismo objeto entre charts causa mutación y ejes rotos.
@@ -253,5 +291,5 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 1. Crear el CSV con la misma estructura (con un registro de `Saldo Inicial`)
 2. Añadir la entrada en `ARCHIVOS` en `app.py`
 3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `app.py` y en `TIPOS_POR_CUENTA` en `index.html`
-4. Añadir `{ type: 'all' }` para los paneles nuevos en `panelFilters` en `index.html`
+4. Añadir `{ type: '3m' }` para los paneles nuevos en `panelFilters` en `index.html`
 5. Añadir un tab nuevo en el HTML y la rama correspondiente en `render()`

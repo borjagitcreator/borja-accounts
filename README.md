@@ -11,6 +11,7 @@ Cuentas/
 ├── app.py              ← Backend Flask (servidor y API)
 ├── index.html          ← Frontend completo (UI, gráficos, tablas)
 ├── requirements.txt    ← Dependencias Python
+├── run.sh              ← Arranque (activa venv inversiones y lanza app.py)
 ├── openbank.csv        ← Datos de Openbank
 ├── ibkr.csv            ← Datos de IBKR
 └── README.md
@@ -21,19 +22,19 @@ Cuentas/
 ## Puesta en marcha
 
 ```bash
-pip install -r requirements.txt
+~/.venvs/inversiones/bin/pip install -r requirements.txt
 
 # Los CSV con datos reales (openbank.csv, ibkr.csv) están en .gitignore.
 # En un clon nuevo, arranca a partir de los ejemplos:
 cp openbank.example.csv openbank.csv
 cp ibkr.example.csv ibkr.csv
 
-python app.py
+./run.sh
 ```
 
-Abre el navegador en: **http://localhost:5000**
+Abre automáticamente el navegador en **http://localhost:5000** (también puedes abrirlo a mano).
 
-El servidor arranca con `debug=True` y `use_reloader=False`. El modo debug activa el traceback interactivo; `use_reloader=False` evita el doble proceso del reloader de Werkzeug (el puerto se libera limpiamente con Ctrl+C).
+El servidor arranca con `FLASK_DEBUG` opcional y `use_reloader=False`, para que el puerto se libere limpiamente con Ctrl+C.
 
 ---
 
@@ -71,8 +72,8 @@ Ambos CSV tienen las mismas cinco columnas:
 |--------------|---------------|--------------------|-------------------------------------------|
 | Gasto        | Gasto         | Resta              | Comisiones u otros gastos                 |
 | Ingreso      | Ingreso       | Suma               | Entradas de dinero                        |
-| Inversión    | Inversión     | Resta              | Dinero enviado a una cartera/posición     |
-| Inversión_r  | Retorno inv.  | Suma               | Retorno recibido de una posición          |
+| Inversión    | Inversión     | Resta              | Dinero enviado a una cartera              |
+| Inversión_r  | Retorno inv.  | Suma               | Retorno recibido al cerrar una cartera    |
 
 > El nombre en UI es solo visual. El valor que se guarda en el CSV y se valida en el backend siempre es el tipo interno.
 
@@ -111,37 +112,44 @@ Cada KPI de ingresos/gastos/balance muestra un delta `↑ +X€ vs ant.` compara
 
 #### Filtros por panel
 
-Cada panel de datos tiene sus propios botones de filtro temporal integrados en su cabecera. Los filtros son independientes entre paneles: puedes ver el gráfico mensual del último trimestre mientras la tabla de movimientos muestra todo el historial.
+Cada panel de datos tiene sus propios botones de filtro temporal integrados en su cabecera. Los filtros son independientes entre paneles.
 
-**El filtro por defecto de todos los paneles es `3m` (últimos 90 días).** El panel de gastos arranca además en modo **Media/mes**.
+**El filtro por defecto de todos los paneles es `3 meses`.** El panel de gastos arranca además en modo **Media/mes**.
+
+Los rangos son **meses de calendario** (no ventanas rodantes de 30/90/180 días). Ejemplo en junio:
+- `Mes` — solo junio (desde el día 1)
+- `3 meses` — abril + mayo + junio
+- `6 meses` — enero … junio
 
 Opciones disponibles (se ocultan si no hay datos en ese rango):
 - `Todo` — todos los registros del historial
-- `6m` — últimos 180 días
-- `3m` — últimos 90 días
-- `1m` — últimos 30 días
+- `6 meses` / `3 meses` / `Mes`
 - Un botón por cada año con datos registrados
 
-Los paneles con filtro temporal propio son: **Evolución del saldo**, **Evolución mensual**, **Gastos por concepto**, **Análisis de Apuestas** (y **Análisis de Inversiones** en IBKR). La tabla de movimientos no usa filtro temporal: tiene su propio buscador (ver más abajo).
+Los paneles con filtro temporal propio son: **Evolución del saldo**, **Evolución mensual**, **Gastos por concepto**, **Análisis de Apuestas** (y en IBKR: **Capital por cartera**, **Transferencias**, **Análisis de carteras**). La tabla de movimientos no usa filtro temporal: tiene su propio buscador.
 
-> Cambiar un filtro de panel actualiza solo ese panel — el formulario de añadir movimientos nunca se reconstruye, por lo que no se pierden datos introducidos a medias.
+> Cambiar un filtro de panel actualiza solo ese panel — el formulario de añadir movimientos nunca se reconstruye.
+
+El selector de KPIs **Trimestre** también usa los últimos 3 meses de calendario (no un trimestre fiscal fijo).
 
 #### Gráfico: Evolución del saldo
-- Línea azul: saldo a lo largo del tiempo
-- Línea roja discontinua: media móvil de 30 días
-- Filtro temporal de panel (mismo sistema que el resto de paneles)
+- Línea de saldo a lo largo del tiempo
+- En Openbank: línea discontinua de media móvil 30 días (en IBKR no se muestra)
+- Filtro temporal de panel
 
 #### Gráfico: Evolución mensual
-Barras verdes (ingresos) y rojas (gastos) por mes, con línea amarilla de balance neto. Respeta el filtro temporal del panel. Usa los mismos criterios que el KPI Balance: ingresos = todos los tipos que suman (excluyendo `Saldo Inicial`), gastos = todos los tipos que restan.
+Barras verdes (ingresos) y rojas (gastos) por mes, con línea de balance neto. Respeta el filtro temporal del panel.
 
 #### Gráfico: Gastos por concepto
-Dos gráficos en paralelo (50 % / 50 %) que comparten el mismo filtro temporal y se actualizan juntos:
+Dos gráficos en paralelo que comparten el mismo filtro temporal:
 
-**Ranking (izquierda)** — barras horizontales con los 20 conceptos de tipo `Gasto` con mayor valor, ordenados de mayor a menor. Tiene dos modos:
-- **Media/mes** — gasto medio mensual de cada concepto. El divisor es el tamaño de la ventana: `1m` → ÷1, `3m` → ÷3, `6m` → ÷6, `Todo`/año → meses distintos con algún gasto en el período.
-- **Total** — total acumulado de cada concepto en el período seleccionado.
+**Ranking** — barras horizontales con los 20 conceptos `Gasto` mayores. Modos **Media/mes** (`Mes`→÷1, `3 meses`→÷3, `6 meses`→÷6) y **Total**.
 
-**Distribución / Donut (derecha)** — gráfico de anillo con los 14 conceptos de mayor gasto total más una categoría "Otros" que agrupa el resto. Muestra siempre el peso porcentual absoluto (no cambia con el modo Media/Total del ranking). Los porcentajes aparecen dentro de cada sector en blanco.
+**Donut** — peso porcentual de los conceptos (siempre total, no media).
+
+Debajo: **Top del mes** — chips con los conceptos de gasto del mes calendario actual (clic → filtra la tabla de movimientos).
+
+Si el gasto del mes va por encima (o por debajo) de la media de los 3 meses anteriores con datos, aparece un aviso suave bajo los KPIs.
 
 #### Análisis de Apuestas
 
@@ -172,22 +180,14 @@ Sección con KPIs de resumen y dos subsecciones: posiciones abiertas e historial
 | Crec. Hist. | Crecimiento histórico acumulado respecto a banca total |
 
 #### Tabla de movimientos y buscador
-La tabla (columna izquierda) muestra **los últimos 20 movimientos** por defecto, ordenados del más reciente al más antiguo. El importe aparece en verde (suma) o rojo (resta) según el tipo. El indicador junto al título muestra "Últimos 20" o el número de resultados de la búsqueda activa.
+La tabla muestra **los últimos 20 movimientos** por defecto. Cada fila (salvo `Saldo Inicial`) tiene **Duplicar** (rellena el formulario con fecha de hoy) y **Editar** (modal: tipo, concepto y total; la fecha no se cambia).
 
-Encima de la tabla hay un **buscador** de tres campos que filtra contra toda la base de datos de la cuenta:
-- **Tipo** — desplegable: "Todos los tipos" o uno concreto.
-- **Concepto** — texto con autocompletado; las sugerencias son los conceptos existentes, filtrados por el tipo elegido si hay uno.
-- **Fecha** — texto con autocompletado en formato `AAAA-MM-DD`; las sugerencias se acotan a las fechas que existen para el tipo y concepto ya seleccionados (matching incremental).
+Encima hay un **buscador** (tipo / concepto / fecha) contra toda la cuenta. Con búsqueda activa se muestran hasta 500 resultados; **Limpiar** vuelve a los últimos 20.
 
-Con cualquier campo de búsqueda activo se muestran todos los resultados coincidentes (hasta 500); al limpiar la búsqueda (botón **Limpiar**) vuelve a los últimos 20. La búsqueda se reinicia al cambiar de cuenta o tras guardar/borrar un movimiento.
+Clic en un concepto de la tabla (o en un chip del top del mes) filtra por ese concepto. **Repetir último** rellena el formulario con el último movimiento cronológico.
 
 #### Formulario: Añadir movimiento
-A la derecha de la tabla de movimientos. Campos:
-- **Fecha** — por defecto hoy
-- **Tipo** — desplegable con los tipos disponibles para Openbank (nombres de UI)
-- **Concepto** — texto libre con autocompletado contextual
-- **Total** — importe en euros + botones rápidos 50 / 100 / 200 / 500 / 1000 €
-
+A la derecha de la tabla. Autocompletado de concepto por frecuencia (prefijo, case-insensitive), chips de los más usados e importe habitual sugerido.
 **Validaciones del servidor:**
 - `Devolución`: el concepto debe coincidir con un `Gasto` registrado.
 - `Cobro apuesta` (`Apuestas_r`): debe existir un `Apuestas` con el mismo concepto y no debe haber ya un `Cobro apuesta` con ese concepto (cada apuesta solo se puede cerrar una vez).
@@ -204,47 +204,26 @@ Muestra un diálogo de confirmación con los detalles del último registro crono
 
 ### Vista IBKR
 
-Vista centrada en inversiones:
-- **KPI saldo actual** — último balance real de la cuenta
-- **Análisis de Inversiones** — sección con KPIs y tablas de posiciones (ver abajo)
-- **Formulario: Añadir movimiento** — misma funcionalidad que en Openbank, con los tipos de IBKR (`Gasto`, `Ingreso`, `Inversión`, `Inversión_r`)
+Vista de **cartera de inversión** (no cuenta corriente), con identidad visual propia (acento verde, monograma IK):
 
-#### Análisis de Inversiones
+- **KPIs:** Saldo · Aportado neto (transferencias OB↔IBKR en el período) · En carteras (snapshot) · P&L cerrado (período)
+- **Evolución del saldo** — sin media móvil
+- **Capital por cartera** — ranking de conceptos `Inversión` (Media/mes o Total)
+- **Transferencias** — recibido / enviado / neto con Openbank + lista + atajo ⇄
+- **Análisis de carteras** — abiertas (ordenadas por capital), cerrar, historial
+- **Movimientos + añadir** — misma potencia que Openbank (buscar, editar, duplicar, repetir)
 
-Misma estructura que el Análisis de Apuestas: strip de KPIs lifetime + tabla de posiciones abiertas con botón Cerrar + historial filtrado por fecha de cierre.
+#### Análisis de carteras
 
-**Strip de KPIs (lifetime):**
-- **Total invertido** — suma de todas las entradas `Inversión` históricas
-- **P&L neto** — balance acumulado de todas las posiciones cerradas
-- **ROI total** — ROI histórico acumulado sobre el total invertido
-- **En cartera ahora** — posiciones abiertas actuales
+Strip de KPIs lifetime + carteras abiertas con **Cerrar** + historial filtrado por fecha de cierre.
 
-**Posiciones abiertas** — botón **Cerrar** abre un modal para registrar el retorno. Se crea automáticamente el `Retorno inv.` (`Inversión_r`) correspondiente. Permite 0 € para pérdida total.
-
-**Historial cerrado** (filtrado por fecha de cierre):
-
-| Columna    | Descripción                                     |
-|------------|-------------------------------------------------|
-| Concepto   | Nombre de la posición/cartera (ej: "Cartera 1") |
-| Inicio     | Fecha de la primera `Inversión`                 |
-| Cierre     | Fecha del último `Retorno inv.`                 |
-| Invertido  | Total invertido                                 |
-| Devuelto   | Total retornado                                 |
-| Balance    | Devuelto − Invertido                            |
-| ROI        | Return on Investment porcentual                 |
-| Bal. Hist. | Balance acumulado (cumsum histórico)            |
-| ROI Hist.  | ROI histórico acumulado sobre el total invertido|
+Al cerrar una cartera, el toast muestra el **ROI** de ese cierre.
 
 ---
 
-### Cerrar posición (modal)
+### Cerrar apuesta / cartera (modal)
 
-El botón **Cerrar** en cualquier posición abierta (apuesta o inversión) abre un modal con:
-- Concepto y banca/capital invertido (solo lectura, pre-rellenado)
-- Campo para el importe recibido (acepta 0 € para pérdida total)
-- Campo de fecha de cierre (por defecto hoy)
-
-Al confirmar se crea automáticamente la entrada `Apuestas_r` o `Inversión_r` con el mismo concepto, sin necesidad de usar el formulario manual de añadir movimiento.
+El botón **Cerrar** abre un modal con concepto y banca/capital (solo lectura), importe recibido (0 € = pérdida total) y fecha. Crea `Apuestas_r` o `Inversión_r` automáticamente.
 
 ---
 
@@ -261,28 +240,26 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 |--------|----------------------------------|-------------------------------------------------|
 | GET    | `/`                              | Sirve index.html                                |
 | GET    | `/api/patrimonio`                | Saldo actual de ambas cuentas                   |
-| GET    | `/api/data/<cuenta>`             | Todos los movimientos de la cuenta como JSON    |
+| GET    | `/api/data/<cuenta>`             | Movimientos JSON (incluye `_idx` por fila)      |
 | POST   | `/api/movimiento/<cuenta>`       | Añade un movimiento y recalcula el saldo        |
+| PUT    | `/api/movimiento/<cuenta>`       | Edita tipo/concepto/total (fecha intacta)       |
 | DELETE | `/api/movimiento/<cuenta>`       | Borra el último movimiento y recalcula el saldo |
 | POST   | `/api/transferencia`             | Registra una transferencia en ambas cuentas     |
-| GET    | `/api/ultima_apuesta_r/<cuenta>` | Último `Apuestas_r` registrado (no usado en UI) |
 
 ---
 
 ## Notas de arquitectura
 
-- **Todo el análisis corre en el frontend.** El backend solo hace CRUD y recálculo de saldo. No hay queries ni lógica de negocio en el servidor.
-- **Filtros por panel, no por página.** Cada panel temporal (saldo, mensual, gastos, apuestas, inversiones) y el buscador de movimientos tienen estado independiente. Cambiar un filtro o buscar lanza una actualización quirúrgica del DOM solo en ese panel — el formulario de añadir movimientos nunca se reconstruye.
-- **KPIs de apuestas/inversiones son lifetime.** Los cálculos de P&L, win rate y ROI se hacen siempre sobre `data` completo, no sobre las filas filtradas. Usar filas filtradas por período causa un bug silencioso: si la apuesta se colocó antes del corte pero se cerró dentro, `banca = 0` y el P&L aparece inflado. El filtro de período solo controla qué filas se muestran en la tabla de historial (filtrado por fecha de cierre `fr`).
-- **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required`: es un `<div id="add-form">` y el envío se dispara con el `onclick` del botón (`submitMov()`), validando en JS. En el Firefox del entorno, los popups nativos de `<select>` y `<input type="date">` dejaban de abrirse cuando el control estaba dentro de un `<form>` con `required` (el resto de selects/fechas de la página —buscador, modal— nunca tuvieron ese combo y siempre funcionaron). Si se vuelve a envolver en `<form>`/`required`, el bug reaparece.
-- **`color-scheme: light`** está definido en `:root` y en `input, select` para que los popups nativos (calendario, desplegables, scrollbars) se rendericen en tema claro.
-- **Layout de objetos Plotly.** La función `baseLayout()` devuelve un objeto fresco en cada llamada. Compartir el mismo objeto entre charts causa mutación y ejes rotos.
-- **Saldo chart:** usa `xaxis.type: 'date'` explícito y recibe siempre el historial completo (sin filtrar).
-- **Chart mensual:** usa `xaxis.type: 'category'` porque los meses son strings `YYYY-MM`.
-- **Chart gastos:** usa `xaxis.type: 'linear'` explícito y `hovermode: 'closest'` para evitar heredar el tipo `date` del chart de saldo.
-- **Fechas en CSV** se guardan en formato `%Y-%m-%d %H:%M:%S.%f` para preservar microsegundos y garantizar el ordenamiento estable con `mergesort`.
-- **Plotly.js** se carga desde CDN. Sin conexión a internet los gráficos no se renderizarán.
-- Flask corre en `localhost` únicamente. No exponerlo a red pública.
+- **Filtros por panel, no por página.** Rangos `Mes` / `3 meses` / `6 meses` = meses de calendario. Cada panel y el buscador tienen estado independiente.
+- **KPIs de apuestas/carteras son lifetime.** El filtro de período solo controla el historial cerrado (por fecha de cierre `fr`).
+- **Identidad por cuenta.** Clases `acc-openbank` / `acc-ibkr` en `body` cambian acento y fondo; monogramas SVG inline (C / OB / IK).
+- **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required` (bug de popups nativos en Firefox con ese combo).
+- **`color-scheme: light`** en `:root` e `input, select`.
+- **Layout de objetos Plotly.** `baseLayout()` devuelve un objeto fresco en cada llamada.
+- **Saldo chart (IBKR):** sin media móvil. **Openbank:** media 30d.
+- **Fechas en CSV** en `%Y-%m-%d %H:%M:%S.%f` para ordenamiento estable con `mergesort`.
+- **Plotly.js** desde CDN.
+- Flask solo en `localhost`. No exponer a red pública.
 
 ---
 

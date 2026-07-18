@@ -348,7 +348,6 @@
     }
 
     input, select {
-      color-scheme: light;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -359,6 +358,17 @@
       outline: none;
       width: 100%;
       transition: border-color 0.15s;
+    }
+    /* Firefox: tipografía web en el control rompe popups nativos de select/date */
+    select,
+    input[type="date"] {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      appearance: auto;
+    }
+    input[type="date"] {
+      min-height: 38px;
+      position: relative;
+      z-index: 2;
     }
     input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
     select option { background: var(--surface2); color: var(--text); }
@@ -649,7 +659,7 @@
     </div>
     <div class="fg">
       <label>Fecha</label>
-      <input type="date" id="t-fecha">
+      <input type="date" id="t-fecha" class="date-input">
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -678,7 +688,7 @@
     </div>
     <div class="fg" style="margin-top:10px">
       <label>Fecha de cierre</label>
-      <input type="date" id="cp-fecha">
+      <input type="date" id="cp-fecha" class="date-input">
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeCloseModal()">Cancelar</button>
@@ -776,8 +786,12 @@ function baseLayout() {
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   setToday('t-fecha');
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.ac-wrap')) acClose();
+  // Cerrar autocomplete sin mutar el DOM en el mismo tick del clic:
+  // en Firefox, queryClose() síncrono cancela popups nativos de <select> y <input type="date">.
+  document.addEventListener('pointerdown', e => {
+    if (e.target.closest('.ac-wrap')) return;
+    if (isNativePopupControl(e.target)) return;
+    scheduleAcClose();
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -793,6 +807,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   await Promise.all([loadPatrimonio(), loadAccount('openbank')]);
 });
+
+function isNativePopupControl(el) {
+  if (!el || !el.closest) return false;
+  const node = el.closest('select, input[type="date"], option');
+  return !!node;
+}
+
+let _acCloseTimer;
+function scheduleAcClose() {
+  clearTimeout(_acCloseTimer);
+  _acCloseTimer = setTimeout(() => acClose(), 0);
+}
 
 // ─────────────────────────────────────────────
 // ACCOUNT
@@ -968,30 +994,10 @@ function searchedMovs() {
   return isSearchActive() ? res.slice(0, 500) : res.slice(0, 20);
 }
 
-function searchConceptOptions() {
-  let rows = data;
-  if (movSearch.tipo) rows = rows.filter(r => r.Tipo === movSearch.tipo);
-  return rankConcepts(conceptStats(rows), movSearch.concepto).map(c => c.concepto);
-}
-
-function searchDateOptions() {
-  // Solo sugiere fechas una vez determinados tipo Y concepto, y si hay coincidencias.
-  if (!movSearch.tipo || !movSearch.concepto) return [];
-  const rows = data.filter(r => r.Tipo === movSearch.tipo
-    && r.Concepto.toLowerCase().includes(movSearch.concepto.toLowerCase()));
-  return [...new Set(rows.map(r => r.Fecha.slice(0, 10)))].sort().reverse();
-}
-
-function fillDatalist(id, opts) {
-  const dl = document.getElementById(id);
-  if (dl) dl.innerHTML = opts.map(o => `<option value="${String(o).replace(/"/g, '&quot;')}"></option>`).join('');
-}
-
 function onSearchChange() {
   movSearch.tipo     = (document.getElementById('s-tipo')     || {}).value || '';
   movSearch.concepto = ((document.getElementById('s-concepto') || {}).value || '').trim();
   movSearch.fecha    = ((document.getElementById('s-fecha')    || {}).value || '').trim();
-  fillDatalist('s-fecha-list', searchDateOptions());
   refreshMovTable();
 }
 
@@ -1099,8 +1105,7 @@ function renderBottomGrid(acc) {
                 oninput="onSearchChange();acOnInput('s-concepto')" onfocus="acOnInput('s-concepto')" onkeydown="acOnKey(event,'s-concepto')">
               <div class="ac-drop" id="ac-s-concepto"></div>
             </div>
-            <input type="text" id="s-fecha" placeholder="Fecha (AAAA-MM-DD)…" autocomplete="off" list="s-fecha-list" oninput="onSearchChange()">
-            <datalist id="s-fecha-list"></datalist>
+            <input type="date" id="s-fecha" class="date-input" onchange="onSearchChange()" title="Filtrar por fecha">
             <button type="button" class="fbtn" onclick="clearSearch()">Limpiar</button>
           </div>
           <div style="overflow-x:auto" id="movimientos-body">${renderMovimientos(searchedMovs())}</div>
@@ -1113,7 +1118,7 @@ function renderBottomGrid(acc) {
           <div class="form-body" id="add-form">
             <div class="fg">
               <label>Fecha</label>
-              <input type="date" id="f-fecha">
+              <input type="date" id="f-fecha" class="date-input">
             </div>
             <div class="fg">
               <label>Tipo</label>
@@ -1125,15 +1130,13 @@ function renderBottomGrid(acc) {
               <label>Concepto</label>
               <div class="ac-wrap">
                 <input type="text" id="f-concepto" placeholder="Empieza a escribir…" autocomplete="off"
-                  oninput="acOnInput('f-concepto');updateTotalHint()" onfocus="acOnInput('f-concepto')" onkeydown="acOnKey(event,'f-concepto')">
+                  oninput="acOnInput('f-concepto')" onfocus="acOnInput('f-concepto')" onkeydown="acOnKey(event,'f-concepto')">
                 <div class="ac-drop" id="ac-f-concepto"></div>
               </div>
-              <div class="concept-chips" id="f-concepto-chips"></div>
             </div>
             <div class="fg full">
               <label>Total (€)</label>
               <input type="number" id="f-total" placeholder="0.00" step="0.01" min="0.01">
-              <div class="hint-total" id="f-total-hint"></div>
               <div class="quick-picks">
                 ${[50, 100, 200, 500, 1000].map(v => `<button type="button" class="qpick" onclick="setTotal(${v})">${v}€</button>`).join('')}
               </div>
@@ -1220,7 +1223,6 @@ function render(acc, rows) {
     `;
     setToday('f-fecha');
     onTipoChange();
-    fillDatalist('s-fecha-list', searchDateOptions());
     requestAnimationFrame(() => {
       chartSaldo(applyFilter(rows, panelFilters.saldo));
       chartMensual(applyFilter(rows, panelFilters.mensual));
@@ -1277,7 +1279,6 @@ function render(acc, rows) {
     `;
     setToday('f-fecha');
     onTipoChange();
-    fillDatalist('s-fecha-list', searchDateOptions());
     requestAnimationFrame(() => {
       chartSaldo(applyFilter(rows, panelFilters.saldo));
       chartCarteras(applyFilter(rows, panelFilters.carteras));
@@ -2116,21 +2117,13 @@ function conceptStats(rows) {
     if (!r.Concepto || r.Tipo === 'Saldo Inicial') continue;
     let e = map.get(r.Concepto);
     if (!e) {
-      e = { concepto: r.Concepto, count: 0, lastFecha: r.Fecha, lastTotal: r.Total, totals: new Map() };
+      e = { concepto: r.Concepto, count: 0, lastFecha: r.Fecha };
       map.set(r.Concepto, e);
     }
     e.count++;
-    if (r.Fecha >= e.lastFecha) { e.lastFecha = r.Fecha; e.lastTotal = r.Total; }
-    const t = r2(r.Total);
-    e.totals.set(t, (e.totals.get(t) || 0) + 1);
+    if (r.Fecha >= e.lastFecha) e.lastFecha = r.Fecha;
   }
-  return [...map.values()].map(e => {
-    let modeTotal = e.lastTotal, modeN = 0;
-    for (const [t, n] of e.totals) {
-      if (n > modeN || (n === modeN && t === e.lastTotal)) { modeN = n; modeTotal = t; }
-    }
-    return { concepto: e.concepto, count: e.count, lastFecha: e.lastFecha, lastTotal: e.lastTotal, modeTotal };
-  });
+  return [...map.values()];
 }
 
 function rankConcepts(stats, query) {
@@ -2196,7 +2189,7 @@ function suggestNextApuesta() {
     const next = pref + String(info.n + 1).padStart(info.digits, '0');
     if (bets.includes(next)) continue;
     const count = bets.filter(c => c.startsWith(pref)).length;
-    if (!best || count > best.count) best = { concepto: next, count, lastFecha: '', lastTotal: null, modeTotal: null, suggested: true };
+    if (!best || count > best.count) best = { concepto: next, count, lastFecha: '', suggested: true };
   }
   return best;
 }
@@ -2222,13 +2215,11 @@ function acOnInput(inputId) {
     drop.classList.add('on');
     return;
   }
-  drop.innerHTML = ranked.map((s, i) => {
-    const meta = s.suggested ? 'siguiente' : `${s.count}×`;
-    return `<div class="ac-item ${i === acState.active ? 'active' : ''}" onmousedown="event.preventDefault();acPick(${i})">
+  drop.innerHTML = ranked.map((s, i) =>
+    `<div class="ac-item ${i === acState.active ? 'active' : ''}" onmousedown="event.preventDefault();acPick(${i})">
       <span class="ac-name">${esc(s.concepto)}</span>
-      <span class="ac-meta">${meta}${s.modeTotal != null ? ' · ' + s.modeTotal.toFixed(0) + '€' : ''}</span>
-    </div>`;
-  }).join('');
+    </div>`
+  ).join('');
   drop.classList.add('on');
 }
 
@@ -2272,57 +2263,10 @@ function acPick(i) {
   input.value = item.concepto;
   acClose();
   if (id === 'f-concepto') {
-    if (item.modeTotal != null) {
-      const tot = document.getElementById('f-total');
-      if (tot && !tot.value) tot.value = Number(item.modeTotal).toFixed(2);
-    }
-    updateTotalHint();
     document.getElementById('f-total')?.focus();
   } else if (id === 's-concepto') {
     onSearchChange();
-  } else if (id === 'e-concepto') {
-    // noop
   }
-}
-
-function refreshConceptChips() {
-  const el = document.getElementById('f-concepto-chips');
-  if (!el) return;
-  const tipo = (document.getElementById('f-tipo') || {}).value;
-  let top = rankConcepts(candidatesForTipo(tipo, null), '').slice(0, 6);
-  if (tipo === 'Apuestas') {
-    const next = suggestNextApuesta();
-    if (next) top = [next, ...top.filter(c => c.concepto !== next.concepto)].slice(0, 6);
-  }
-  if (!top.length) { el.innerHTML = ''; return; }
-  el.innerHTML = top.map(s => {
-    const label = s.suggested ? `${esc(s.concepto)} <span class="chip-n">nuevo</span>` : `${esc(s.concepto)} <span class="chip-n">${s.count}×</span>`;
-    return `<button type="button" class="chip" title="${escAttr(s.concepto)}" data-c="${escAttr(s.concepto)}" onclick="pickChip(this.dataset.c)">${label}</button>`;
-  }).join('');
-}
-
-function pickChip(concepto) {
-  const input = document.getElementById('f-concepto');
-  if (!input) return;
-  input.value = concepto;
-  const stats = conceptCandidates('f-concepto').find(c => c.concepto === concepto);
-  if (stats?.modeTotal != null) {
-    const tot = document.getElementById('f-total');
-    if (tot && !tot.value) tot.value = Number(stats.modeTotal).toFixed(2);
-  }
-  updateTotalHint();
-  acClose();
-}
-
-function updateTotalHint() {
-  const hint = document.getElementById('f-total-hint');
-  if (!hint) return;
-  const concepto = ((document.getElementById('f-concepto') || {}).value || '').trim();
-  if (!concepto) { hint.textContent = ''; return; }
-  const stats = conceptCandidates('f-concepto').find(c => c.concepto.toLowerCase() === concepto.toLowerCase());
-  if (!stats) { hint.textContent = ''; return; }
-  hint.innerHTML = `Habitual: <b style="color:var(--text)">${stats.modeTotal.toFixed(2)}€</b> · ${stats.count} vez${stats.count !== 1 ? 'es' : ''} · último ${fd(stats.lastFecha)}
-    <button type="button" class="qpick" style="margin-left:6px" onclick="setTotal(${stats.modeTotal})">Usar</button>`;
 }
 
 // ─────────────────────────────────────────────
@@ -2330,19 +2274,11 @@ function updateTotalHint() {
 // ─────────────────────────────────────────────
 function onTipoChange() {
   acClose();
-  refreshConceptChips();
-  updateTotalHint();
-  const tipo = (document.getElementById('f-tipo') || {}).value;
-  const input = document.getElementById('f-concepto');
-  // Sugerir siguiente apuesta al cambiar a Apuestas si el campo está vacío
-  if (tipo === 'Apuestas' && input && !input.value.trim()) {
-    const next = suggestNextApuesta();
-    if (next) { /* solo chips/dropdown, no forzar valor */ }
-  }
 }
 
 function setTotal(v) {
-  document.getElementById('f-total').value = Number(v).toFixed(2);
+  const el = document.getElementById('f-total');
+  if (el) el.value = Number(v).toFixed(2);
 }
 
 function fillFormFromRow(row) {
@@ -2359,7 +2295,6 @@ function fillFormFromRow(row) {
   concEl.value = row.Concepto;
   totEl.value = Number(row.Total).toFixed(2);
   setToday('f-fecha');
-  updateTotalHint();
   concEl.focus();
   return true;
 }
@@ -2558,7 +2493,16 @@ function groupBy(arr, key) {
 const sumC  = arr => arr.reduce((s, r) => s + (r.Total || 0), 0);
 const minD  = arr => arr.reduce((m, r) => !m || r.Fecha < m ? r.Fecha : m, null) || '';
 const maxD  = arr => arr.reduce((m, r) => !m || r.Fecha > m ? r.Fecha : m, null) || '';
-const setToday = id => { const el = document.getElementById(id); if (el) el.value = new Date().toISOString().slice(0, 10); };
+
+function localISODate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function setToday(id) {
+  const el = document.getElementById(id);
+  if (el) el.value = localISODate();
+}
 
 let _toastTimer;
 function toast(msg, type = 'ok') {

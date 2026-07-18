@@ -9,7 +9,7 @@ URL="http://localhost:5000"
 (
   for _ in $(seq 1 30); do
     if curl -sf "$URL" >/dev/null 2>&1; then
-      xdg-open "$URL" >/dev/null 2>&1 || true
+      google-chrome "$URL" >/dev/null 2>&1 || xdg-open "$URL" >/dev/null 2>&1 || true
       break
     fi
     sleep 0.2

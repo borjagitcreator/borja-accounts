@@ -32,7 +32,7 @@ cp ibkr.example.csv ibkr.csv
 ./run.sh
 ```
 
-Abre automáticamente el navegador en **http://localhost:5000** (también puedes abrirlo a mano).
+Abre automáticamente **Chrome** en **http://localhost:5000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
 
 El servidor arranca con `FLASK_DEBUG` opcional y `use_reloader=False`, para que el puerto se libere limpiamente con Ctrl+C.
 
@@ -187,7 +187,7 @@ Encima hay un **buscador** (tipo / concepto / fecha) contra toda la cuenta. Con 
 Clic en un concepto de la tabla (o en un chip del top del mes) filtra por ese concepto. **Repetir último** rellena el formulario con el último movimiento cronológico.
 
 #### Formulario: Añadir movimiento
-A la derecha de la tabla. Autocompletado de concepto por frecuencia (prefijo, case-insensitive), chips de los más usados e importe habitual sugerido.
+A la derecha de la tabla. Autocompletado de concepto por frecuencia (prefijo, case-insensitive).
 **Validaciones del servidor:**
 - `Devolución`: el concepto debe coincidir con un `Gasto` registrado.
 - `Cobro apuesta` (`Apuestas_r`): debe existir un `Apuestas` con el mismo concepto y no debe haber ya un `Cobro apuesta` con ese concepto (cada apuesta solo se puede cerrar una vez).
@@ -253,8 +253,9 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 - **Filtros por panel, no por página.** Rangos `Mes` / `3 meses` / `6 meses` = meses de calendario. Cada panel y el buscador tienen estado independiente.
 - **KPIs de apuestas/carteras son lifetime.** El filtro de período solo controla el historial cerrado (por fecha de cierre `fr`).
 - **Identidad por cuenta.** Clases `acc-openbank` / `acc-ibkr` en `body` cambian acento y fondo; monogramas SVG inline (C / OB / IK).
-- **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required` (bug de popups nativos en Firefox con ese combo).
-- **`color-scheme: light`** en `:root` e `input, select`.
+- **Controles del formulario "Añadir movimiento".** El bloque NO es un `<form>` y sus campos NO llevan `required`.
+- **`color-scheme: light`** en `:root`.
+- **`run.sh` abre Chrome explícitamente** (con fallback a `xdg-open`), no el navegador por defecto: en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` fallan a nivel de compositor.
 - **Layout de objetos Plotly.** `baseLayout()` devuelve un objeto fresco en cada llamada.
 - **Saldo chart (IBKR):** sin media móvil. **Openbank:** media 30d.
 - **Fechas en CSV** en `%Y-%m-%d %H:%M:%S.%f` para ordenamiento estable con `mergesort`.

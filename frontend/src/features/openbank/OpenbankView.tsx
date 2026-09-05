@@ -5,12 +5,21 @@ import { PeriodSelector } from '../kpis/PeriodSelector';
 import { useAccountKpis } from '../kpis/useAccountKpis';
 import { MovimientosSection } from '../movimientos/MovimientosSection';
 import { useAccountData } from '../movimientos/useAccountData';
+import { ApuestasSection } from '../apuestas/ApuestasSection';
+import { DEFAULT_RANGE_FILTER, type RangeFilter } from '../filters/RangeFilter';
 import type { KpiPeriod } from '../../api/types';
 
 export function OpenbankView({ onDataChanged }: { onDataChanged: () => void }) {
   const [period, setPeriod] = useState<KpiPeriod>('mes');
-  const kpi = useAccountKpis('openbank', period);
-  const { data, reload } = useAccountData('openbank');
+  const [rangeFilter, setRangeFilter] = useState<RangeFilter>(DEFAULT_RANGE_FILTER);
+  const { kpi, reload: reloadKpis } = useAccountKpis('openbank', period);
+  const { data, reload: reloadData } = useAccountData('openbank');
+
+  function refreshAll() {
+    reloadKpis();
+    reloadData();
+    onDataChanged();
+  }
 
   return (
     <>
@@ -25,7 +34,9 @@ export function OpenbankView({ onDataChanged }: { onDataChanged: () => void }) {
       </div>
       <div className="kpis">{kpi && <KpiCards kpi={kpi} period={period} />}</div>
 
-      {data && <MovimientosSection account="openbank" data={data} reload={reload} onDataChanged={onDataChanged} />}
+      {data && <ApuestasSection allData={data} filter={rangeFilter} onFilterChange={setRangeFilter} onDataChanged={refreshAll} />}
+
+      {data && <MovimientosSection account="openbank" data={data} onDataChanged={refreshAll} />}
     </>
   );
 }

@@ -14,11 +14,10 @@ const ACTION_BTN_STYLE = { fontSize: 12, padding: '5px 12px' };
 interface Props {
   account: AccountId;
   data: Movement[];
-  reload: () => void;
   onDataChanged: () => void;
 }
 
-export function MovimientosSection({ account, data, reload, onDataChanged }: Props) {
+export function MovimientosSection({ account, data, onDataChanged }: Props) {
   const [search, setSearch] = useState<MovSearch>(EMPTY_SEARCH);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const formRef = useRef<AddMovementFormHandle>(null);
@@ -29,7 +28,6 @@ export function MovimientosSection({ account, data, reload, onDataChanged }: Pro
   const countLabel = isSearchActive(search) ? `${movs.length} resultado(s)` : 'Últimos 20';
 
   function afterMutation() {
-    reload();
     onDataChanged();
   }
 

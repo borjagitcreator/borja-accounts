@@ -15,6 +15,16 @@ export interface AccountKpis {
   balanceDelta: Delta;
 }
 
+export interface IbkrKpis {
+  saldo: number;
+  aportado: number;
+  aportadoDelta: Delta;
+  enCarteras: number;
+  enCarterasCount: number;
+  pnl: number;
+  pnlDelta: Delta;
+}
+
 export interface Patrimonio {
   openbank: number;
   ibkr: number;
@@ -54,4 +64,35 @@ export interface DeleteResult {
   eliminado: Movement;
   saldo: number;
   error?: string;
+}
+
+export interface OpenBetPosition {
+  concepto: string;
+  fi: string;
+  banca: number;
+}
+
+export interface ClosedBetPosition {
+  Concepto: string;
+  fi: string;
+  fr: string;
+  banca: number;
+  devuelto: number;
+  bal: number;
+  crec: number;
+  balH: number;
+  crecH: number;
+}
+
+export interface BettingReport {
+  openCount: number;
+  closedCount: number;
+  openPositions: OpenBetPosition[];
+  closedPositions: ClosedBetPosition[];
+  openTotal: number;
+  totalApostado: number;
+  totalBets: number;
+  totalPnL: number;
+  winRate: number;
+  wins: number;
 }

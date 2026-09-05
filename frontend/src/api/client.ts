@@ -1,13 +1,23 @@
 import type {
   AccountKpis,
   AddMovementRequest,
+  BettingReport,
   DeleteResult,
   EditMovementRequest,
+  IbkrKpis,
   KpiPeriod,
   Movement,
   MutationResult,
   Patrimonio,
 } from './types';
+import type { RangeFilter } from '../features/filters/RangeFilter';
+
+async function fetchRangeReport<T>(path: string, filter: RangeFilter): Promise<T> {
+  const params = new URLSearchParams({ range: filter.type });
+  if (filter.year !== undefined) params.set('year', String(filter.year));
+  const res = await fetch(`${path}?${params}`);
+  return res.json();
+}
 
 export async function fetchPatrimonio(): Promise<Patrimonio> {
   const res = await fetch('/api/patrimonio');
@@ -16,6 +26,11 @@ export async function fetchPatrimonio(): Promise<Patrimonio> {
 
 export async function fetchAccountKpis(cuenta: string, period: KpiPeriod): Promise<AccountKpis> {
   const res = await fetch(`/api/accounts/${cuenta}/kpis?period=${encodeURIComponent(period)}`);
+  return res.json();
+}
+
+export async function fetchIbkrKpis(period: KpiPeriod): Promise<IbkrKpis> {
+  const res = await fetch(`/api/accounts/ibkr/ibkr-kpis?period=${encodeURIComponent(period)}`);
   return res.json();
 }
 
@@ -48,4 +63,8 @@ export async function deleteLastMovement(cuenta: string): Promise<DeleteResult> 
   const res = await fetch(`/api/movimiento/${cuenta}`, { method: 'DELETE' });
   const json = await res.json();
   return { ok: res.ok, ...json };
+}
+
+export function fetchApuestas(filter: RangeFilter): Promise<BettingReport> {
+  return fetchRangeReport('/api/accounts/openbank/apuestas', filter);
 }

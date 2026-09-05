@@ -872,33 +872,6 @@ function calendarMonthStart(monthsBack) {
   return `${y}-${m}-01`;
 }
 
-function monthsBackForFilter(type) {
-  if (type === '1m') return 0;
-  if (type === '3m') return 2;
-  if (type === '6m') return 5;
-  return null;
-}
-
-function filterCutoff(f) {
-  if (!f || f.type === 'all') return null;
-  if (f.type === 'year') return { mode: 'year', year: String(f.year) };
-  const back = monthsBackForFilter(f.type);
-  if (back == null) return null;
-  return { mode: 'from', cutoff: calendarMonthStart(back) };
-}
-
-function rowInFilter(fecha, f) {
-  const c = filterCutoff(f);
-  if (!c) return true;
-  if (c.mode === 'year') return fecha.startsWith(c.year);
-  return fecha >= c.cutoff;
-}
-
-function applyFilter(rows, f) {
-  if (!f || f.type === 'all') return rows;
-  return rows.filter(r => rowInFilter(r.Fecha, f));
-}
-
 function panelFilterBar(panel, allRows) {
   const c1m = calendarMonthStart(0);
   const c3m = calendarMonthStart(2);
@@ -939,29 +912,28 @@ async function setGastosMode(mode) {
   chartGastos((await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode)).ranking);
 }
 
-function setCarterasMode(mode) {
+async function setCarterasMode(mode) {
   carterasMode = mode;
   document.querySelectorAll('.carteras-mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  chartCarteras(applyFilter(data, panelFilters.carteras));
+  chartCarteras(await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode));
 }
 
 async function refreshPanel(panel) {
-  const filtered = applyFilter(data, panelFilters[panel]);
   const pfEl = document.getElementById(`pf-${panel}`);
   if (pfEl) pfEl.innerHTML = panelFilterBar(panel, data);
 
   if (panel === 'saldo') {
-    chartSaldo(filtered);
+    chartSaldo(await fetchRangeReport(`/api/accounts/${account}/saldo-evolucion`, panelFilters.saldo));
   } else if (panel === 'mensual') {
-    chartMensual(filtered);
+    chartMensual(await fetchRangeReport('/api/accounts/openbank/mensual-evolucion', panelFilters.mensual));
   } else if (panel === 'gastos') {
     const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
     chartGastos(gastosRanking.ranking);
     chartDonut(gastosRanking.donut);
   } else if (panel === 'carteras') {
-    chartCarteras(filtered);
+    chartCarteras(await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode));
   } else if (panel === 'transferencias') {
     const el = document.getElementById('transferencias-body');
     if (el) el.innerHTML = transferenciasBody(await fetchRangeReport('/api/accounts/ibkr/transferencias', panelFilters.transferencias));
@@ -1175,6 +1147,8 @@ async function render(acc, rows) {
     const apuestasHtml = await renderApuestas();
     const gastosMesActual = await fetchGastosMesActual('openbank');
     const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
+    const saldoReport = await fetchRangeReport('/api/accounts/openbank/saldo-evolucion', panelFilters.saldo);
+    const mensualReport = await fetchRangeReport('/api/accounts/openbank/mensual-evolucion', panelFilters.mensual);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ob')}
@@ -1240,8 +1214,8 @@ async function render(acc, rows) {
     setToday('f-fecha');
     onTipoChange();
     requestAnimationFrame(() => {
-      chartSaldo(applyFilter(rows, panelFilters.saldo));
-      chartMensual(applyFilter(rows, panelFilters.mensual));
+      chartSaldo(saldoReport);
+      chartMensual(mensualReport);
       chartGastos(gastosRanking.ranking);
       chartDonut(gastosRanking.donut);
     });
@@ -1250,6 +1224,8 @@ async function render(acc, rows) {
     const kpi = await fetchIbkrKpis(kpiType);
     const inversionesHtml = await renderInversiones();
     const transferenciasHtml = await renderTransferencias();
+    const saldoReport = await fetchRangeReport('/api/accounts/ibkr/saldo-evolucion', panelFilters.saldo);
+    const carterasReport = await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ik')}
@@ -1298,8 +1274,8 @@ async function render(acc, rows) {
     setToday('f-fecha');
     onTipoChange();
     requestAnimationFrame(() => {
-      chartSaldo(applyFilter(rows, panelFilters.saldo));
-      chartCarteras(applyFilter(rows, panelFilters.carteras));
+      chartSaldo(saldoReport);
+      chartCarteras(carterasReport);
     });
   }
 }
@@ -1362,14 +1338,18 @@ async function fetchGastosRanking(cuenta, f, mode) {
   return res.json();
 }
 
+async function fetchCarterasRanking(cuenta, f, mode) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all', mode });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`/api/accounts/${cuenta}/carteras-ranking?${params}`);
+  return res.json();
+}
+
 // ─────────────────────────────────────────────
 // CHARTS
 // ─────────────────────────────────────────────
-function chartSaldo(rows) {
-  const sorted = [...rows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const dates  = sorted.map(r => r.Fecha);
-  const saldos = sorted.map(r => r.Saldo);
-  const actual = saldos.at(-1) || 0;
+function chartSaldo(report) {
+  const { dates, saldos, actual, mediaMovil } = report;
   const L = baseLayout();
   const lineColor = account === 'ibkr' ? '#2F5D50' : '#0969da';
 
@@ -1380,11 +1360,9 @@ function chartSaldo(rows) {
     hovertemplate: '%{x|%d/%m/%y}: <b>%{y:,.2f}€</b><extra></extra>'
   }];
 
-  // Media móvil solo en Openbank (cuenta activa); en IBKR sobra
-  if (account !== 'ibkr') {
-    const media = rollingMean(saldos, dates, 30);
+  if (mediaMovil) {
     traces.push({
-      x: dates, y: media, type: 'scatter', mode: 'lines',
+      x: dates, y: mediaMovil, type: 'scatter', mode: 'lines',
       name: 'Media 30d',
       line: { color: '#cf222e', width: 1.5, dash: 'dash' },
       opacity: 0.7,
@@ -1399,18 +1377,11 @@ function chartSaldo(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartMensual(rows) {
-  const byMes = {};
-  for (const r of rows) {
-    const m = r.Fecha.slice(0, 7);
-    if (!byMes[m]) byMes[m] = { ing: 0, gas: 0 };
-    if (TIPOS_INGRESO.has(r.Tipo) && r.Tipo !== 'Saldo Inicial') byMes[m].ing += r.Total;
-    else if (TIPOS_NEGATIVOS.has(r.Tipo)) byMes[m].gas += r.Total;
-  }
-  const meses = Object.keys(byMes).sort();
-  const ing   = meses.map(m => r2(byMes[m].ing));
-  const gas   = meses.map(m => r2(byMes[m].gas));
-  const bal   = meses.map((_, i) => r2(ing[i] - gas[i]));
+function chartMensual(report) {
+  const meses = report.meses;
+  const ing   = report.ingresos;
+  const gas   = report.gastos;
+  const bal   = report.balance;
   const L = baseLayout();
 
   Plotly.newPlot('c-mensual', [
@@ -1495,52 +1466,16 @@ function chartDonut(report) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartCarteras(rows) {
-  const invs = rows.filter(r => r.Tipo === 'Inversión' && r.Total != null && !isNaN(r.Total));
+function chartCarteras(report) {
   const el = document.getElementById('c-carteras');
   if (!el) return;
-  if (!invs.length) { Plotly.purge('c-carteras'); return; }
 
-  const byConcepto = {};
-  for (const r of invs) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const gf = panelFilters.carteras;
-  let nMonths;
-  if (!gf || gf.type === 'all' || gf.type === 'year') {
-    nMonths = new Set(invs.map(r => r.Fecha.slice(0, 7))).size || 1;
-  } else if (gf.type === '1m') {
-    nMonths = 1;
-  } else if (gf.type === '3m') {
-    nMonths = 3;
-  } else {
-    nMonths = 6;
-  }
-
-  let entries, hoverSuffix;
-  if (carterasMode === 'media') {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total / nMonths)])
-      .filter(([, avg]) => avg > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .reverse();
-    hoverSuffix = '€/mes';
-  } else {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total)])
-      .filter(([, t]) => t > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .reverse();
-    hoverSuffix = '€';
-  }
+  const entries = [...report.entries].reverse();
+  const hoverSuffix = report.hoverSuffix;
 
   if (!entries.length) { Plotly.purge('c-carteras'); return; }
-  const conceptos = entries.map(([c]) => c);
-  const valores   = entries.map(([, v]) => v);
+  const conceptos = entries.map(e => e.concepto);
+  const valores   = entries.map(e => e.valor);
   const maxV = Math.max(...valores);
   const L = baseLayout();
 
@@ -1562,18 +1497,6 @@ function chartCarteras(rows) {
              tickfont: { color: '#24292f', size: 12 } },
     showlegend: false
   }, { responsive: true, displayModeBar: false });
-}
-
-function rollingMean(vals, dates, days) {
-  const ms = days * 86400000;
-  return vals.map((_, i) => {
-    const cut = new Date(dates[i]).getTime() - ms;
-    let s = 0, n = 0;
-    for (let j = 0; j <= i; j++) {
-      if (new Date(dates[j]).getTime() >= cut) { s += vals[j]; n++; }
-    }
-    return n ? s / n : vals[i];
-  });
 }
 
 // ─────────────────────────────────────────────

@@ -10,11 +10,10 @@ from zoneinfo import ZoneInfo
 
 from domain.entities import Movement
 from domain.services.calendar import month_key
+from domain.services.concept_ranking import rank_by_concept
 from domain.services.period_filter import filter_by_field
 
 TZ = ZoneInfo("Europe/Madrid")
-
-_MONTHS_FOR_RANGE = {"1m": 1, "3m": 3, "6m": 6}
 
 
 def _fecha_str(m: Movement) -> str:
@@ -73,38 +72,15 @@ def _filtered_gastos(movements, range_type, year, reference_local):
     return [m for m in filtered if m.type == "Gasto" and m.amount is not None]
 
 
-def _n_months(gastos: list[Movement], range_type: str) -> int:
-    if range_type in (None, "all", "year"):
-        return len({_fecha_str(m)[:7] for m in gastos}) or 1
-    return _MONTHS_FOR_RANGE.get(range_type, 1)
-
-
 def compute_gastos_ranking(movements: list[Movement], range_type: str, year: int | None,
                             reference: datetime, mode: str = "media", limit: int = 20) -> dict:
-    reference_local = reference.astimezone(TZ)
-    gastos = _filtered_gastos(movements, range_type, year, reference_local)
-    hover_suffix = "€/mes" if mode == "media" else "€"
-    if not gastos:
-        return {"entries": [], "hoverSuffix": hover_suffix, "hasGastos": False}
-
-    by_concepto: dict[str, float] = {}
-    for m in gastos:
-        by_concepto[m.concept] = by_concepto.get(m.concept, 0.0) + m.amount
-
-    n_months = _n_months(gastos, range_type)
-    if mode == "media":
-        entries = [(c, _r2(t / n_months)) for c, t in by_concepto.items()]
-    else:
-        entries = [(c, _r2(t)) for c, t in by_concepto.items()]
-
-    entries = [(c, v) for c, v in entries if v > 0]
-    entries.sort(key=lambda kv: kv[1], reverse=True)
-    entries = entries[:limit]
-
+    entries, hover_suffix, has_gastos = rank_by_concept(
+        movements, "Gasto", range_type, year, reference, mode, limit,
+    )
     return {
         "entries": [{"concepto": c, "valor": v} for c, v in entries],
         "hoverSuffix": hover_suffix,
-        "hasGastos": True,
+        "hasGastos": has_gastos,
     }
 
 

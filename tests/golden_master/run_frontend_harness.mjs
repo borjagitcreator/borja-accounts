@@ -87,6 +87,10 @@ function loadBackendFixture() {
     openbankGastosMesActual: snap.openbank_gastos_mes_actual,
     openbankGastosRanking3mMedia: snap.openbank_gastos_ranking_3m_media,
     openbankGastosRankingAllMedia: snap.openbank_gastos_ranking_all_media,
+    openbankSaldoEvolucionAll: snap.openbank_saldo_evolucion_all,
+    openbankMensualEvolucionAll: snap.openbank_mensual_evolucion_all,
+    ibkrSaldoEvolucionAll: snap.ibkr_saldo_evolucion_all,
+    ibkrCarterasRankingAllTotal: snap.ibkr_carteras_ranking_all_total,
   };
 }
 
@@ -100,7 +104,6 @@ const EXPOSE = [
   "apuestasBody", "inversionesBody", "transferenciasBody",
   "gastoAlertHtml", "topMerchantsHtml", "renderMovimientos", "searchedMovs",
   "chartSaldo", "chartMensual", "chartGastos", "chartDonut", "chartCarteras",
-  "applyFilter",
 ];
 
 function wrapForExposure(scriptBody) {
@@ -139,11 +142,8 @@ function run() {
   result.openbank_apuestas_body = api.apuestasBody(fixture.openbankApuestasReport3m);
   result.openbank_movimientos_default = api.renderMovimientos(api.searchedMovs());
 
-  api.setPanelFilter("saldo", { type: "all" });
-  api.setPanelFilter("mensual", { type: "all" });
-  api.setPanelFilter("gastos", { type: "all" });
-  api.chartSaldo(api.applyFilter(fixture.openbank, { type: "all" }));
-  api.chartMensual(api.applyFilter(fixture.openbank, { type: "all" }));
+  api.chartSaldo(fixture.openbankSaldoEvolucionAll);
+  api.chartMensual(fixture.openbankMensualEvolucionAll);
   api.chartGastos(fixture.openbankGastosRankingAllMedia.ranking);
   api.chartDonut(fixture.openbankGastosRankingAllMedia.donut);
   result.openbank_charts_all = JSON.parse(JSON.stringify(sandbox.__capturedPlots));
@@ -161,8 +161,8 @@ function run() {
   result.ibkr_transferencias_body = api.transferenciasBody(fixture.ibkrTransferenciasReport3m);
   result.ibkr_movimientos_default = api.renderMovimientos(api.searchedMovs());
 
-  api.chartSaldo(api.applyFilter(fixture.ibkr, { type: "all" }));
-  api.chartCarteras(api.applyFilter(fixture.ibkr, { type: "all" }));
+  api.chartSaldo(fixture.ibkrSaldoEvolucionAll);
+  api.chartCarteras(fixture.ibkrCarterasRankingAllTotal);
   result.ibkr_charts_all = JSON.parse(JSON.stringify(sandbox.__capturedPlots));
 
   console.log(JSON.stringify(result, null, 2));

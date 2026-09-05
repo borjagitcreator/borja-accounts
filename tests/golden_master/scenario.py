@@ -115,10 +115,25 @@ def run_scenario(repo_root):
             result["openbank_gastos_ranking_3m_media"] = client.get(
                 "/api/accounts/openbank/gastos-ranking?range=3m&mode=media"
             ).json()
-            # El harness frontend fuerza panelFilters.gastos={type:'all'} solo para la
-            # captura "openbank_charts_all" (histórico completo) -- ver run_frontend_harness.mjs.
+            # El harness frontend fuerza panelFilters.{saldo,mensual,gastos,carteras}=
+            # {type:'all'} solo para las capturas "*_charts_all" (histórico completo)
+            # -- ver run_frontend_harness.mjs.
             result["openbank_gastos_ranking_all_media"] = client.get(
                 "/api/accounts/openbank/gastos-ranking?range=all&mode=media"
+            ).json()
+            result["openbank_saldo_evolucion_all"] = client.get(
+                "/api/accounts/openbank/saldo-evolucion?range=all"
+            ).json()
+            result["openbank_mensual_evolucion_all"] = client.get(
+                "/api/accounts/openbank/mensual-evolucion?range=all"
+            ).json()
+            result["ibkr_saldo_evolucion_all"] = client.get(
+                "/api/accounts/ibkr/saldo-evolucion?range=all"
+            ).json()
+            # carterasMode por defecto en index.html es 'total' (a diferencia de
+            # gastosMode, que es 'media').
+            result["ibkr_carteras_ranking_all_total"] = client.get(
+                "/api/accounts/ibkr/carteras-ranking?range=all&mode=total"
             ).json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---

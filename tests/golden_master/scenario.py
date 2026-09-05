@@ -69,11 +69,17 @@ def run_scenario(repo_root):
             appmod = _load_app_module(repo_root)
             client = TestClient(appmod.app)
 
-            # GET / debe servir index.html byte a byte. No forma parte del
-            # dict comparado contra el snapshot (ese no lo contiene) —
-            # falla aquí mismo, con un mensaje claro, si diverge.
-            expected_index = open(os.path.join(repo_root, "index.html"), "rb").read()
-            assert client.get("/").content == expected_index, "GET / no sirve index.html byte a byte"
+            # GET / debe servir el shell HTML de la app. Hasta el Bloque 5
+            # esto comparaba index.html byte a byte -- una vez el fichero
+            # servido pasa a ser un build artifact (frontend/dist/index.html,
+            # ver app/main.py), su hash cambia en cada `npm run build` y la
+            # comparación exacta deja de tener sentido. Se debilita aquí,
+            # ANTES de tocar app/main.py, para que el commit que enchufa
+            # React sea el único que puede romper esta prueba.
+            index_response = client.get("/")
+            assert index_response.status_code == 200, "GET / no responde 200"
+            assert index_response.headers["content-type"].startswith("text/html"), "GET / no sirve HTML"
+            assert len(index_response.content) > 0, "GET / sirve una respuesta vacía"
 
             result = {}
 

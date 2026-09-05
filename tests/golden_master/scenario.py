@@ -91,6 +91,11 @@ def run_scenario(repo_root):
                 period: client.get(f"/api/accounts/openbank/kpis?period={period}").json()
                 for period in ("mes", "trimestre", "año")
             }
+            # panelFilters.apuestas por defecto en index.html es {type: '3m'} --
+            # coincide con el rango que ya capturó snapshot_frontend.json.
+            result["openbank_apuestas_report_3m"] = client.get(
+                "/api/accounts/openbank/apuestas?range=3m"
+            ).json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []

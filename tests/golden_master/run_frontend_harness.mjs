@@ -77,9 +77,10 @@ function loadBackendFixture() {
   return {
     openbank: snap.initial_data_openbank,
     ibkr: snap.initial_data_ibkr,
-    // Ya calculado por GET /api/accounts/openbank/kpis (Bloque 4) -- el
-    // frontend deja de recalcular esto, solo lo pinta.
+    // Ya calculado por el backend (Bloque 4) -- el frontend deja de
+    // recalcular esto, solo lo pinta.
     openbankKpisByPeriod: snap.openbank_kpis_by_period,
+    openbankApuestasReport3m: snap.openbank_apuestas_report_3m,
   };
 }
 
@@ -129,7 +130,7 @@ function run() {
   }
   result.openbank_gasto_alert = api.gastoAlertHtml();
   result.openbank_top_merchants = api.topMerchantsHtml();
-  result.openbank_apuestas_body = api.apuestasBody(fixture.openbank);
+  result.openbank_apuestas_body = api.apuestasBody(fixture.openbankApuestasReport3m);
   result.openbank_movimientos_default = api.renderMovimientos(api.searchedMovs());
 
   api.setPanelFilter("saldo", { type: "all" });

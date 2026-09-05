@@ -22,6 +22,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from domain.entities import Movement
+from domain.services.calendar import calendar_month_start, month_key
 from domain.value_objects import TIPOS_NEGATIVOS, TIPOS_POSITIVOS
 
 TZ = ZoneInfo("Europe/Madrid")
@@ -36,29 +37,6 @@ def _r2(v: float) -> float:
 
 def _fecha_str(m: Movement) -> str:
     return m.occurred_at.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _normalize_month(year: int, month0: int) -> tuple[int, int]:
-    """month0 es 0-indexed y puede caer fuera de [0,11], igual que JS."""
-    year += month0 // 12
-    month0 = month0 % 12
-    return year, month0
-
-
-def calendar_month_start(reference_local: datetime, months_back: int) -> str:
-    """Sin bug: usa directamente los componentes locales del instante
-    (equivalente a los getters de un mismo objeto Date, sin pasar por
-    toISOString/UTC)."""
-    year, month0 = _normalize_month(reference_local.year, reference_local.month - 1 - months_back)
-    return f"{year:04d}-{month0 + 1:02d}-01"
-
-
-def _month_key(local_year: int, local_month0: int, offset: int) -> str:
-    """'YYYY-MM' del mes que es `offset` meses respecto a (local_year,
-    local_month0), en componentes de calendario locales -- nunca pasa por
-    UTC, así que no puede cruzar de mes al convertir zona horaria."""
-    year, month0 = _normalize_month(local_year, local_month0 + offset)
-    return f"{year:04d}-{month0 + 1:02d}"
 
 
 def _sum_period(movements: list[Movement], in_period) -> dict:
@@ -114,8 +92,8 @@ def compute_kpis(movements: list[Movement], kpi_type: str, reference: datetime) 
         curr = _sum_period(movements, lambda m: _fecha_str(m).startswith(y))
         prv = _sum_period(movements, lambda m: _fecha_str(m).startswith(py))
     else:
-        m_key = _month_key(reference_local.year, reference_local.month - 1, 0)
-        pm_key = _month_key(reference_local.year, reference_local.month - 1, -1)
+        m_key = month_key(reference_local, 0)
+        pm_key = month_key(reference_local, -1)
         curr = _sum_period(movements, lambda m: _fecha_str(m)[:7] == m_key)
         prv = _sum_period(movements, lambda m: _fecha_str(m)[:7] == pm_key)
 

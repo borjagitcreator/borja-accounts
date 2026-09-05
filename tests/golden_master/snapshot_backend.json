@@ -1035,6 +1035,24 @@
       "status": 200
     }
   ],
+  "openbank_apuestas_report_3m": {
+    "closedCount": 2,
+    "closedPositions": [],
+    "openCount": 1,
+    "openPositions": [
+      {
+        "banca": 120.0,
+        "concepto": "B365 - 3",
+        "fi": "2026-05-28 09:00:00"
+      }
+    ],
+    "openTotal": 120.0,
+    "totalApostado": 300.0,
+    "totalBets": 3,
+    "totalPnL": -30.0,
+    "winRate": 50.0,
+    "wins": 1
+  },
   "openbank_kpis_by_period": {
     "año": {
       "balance": 3655.0,

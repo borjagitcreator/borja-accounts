@@ -952,7 +952,7 @@ function setCarterasMode(mode) {
   chartCarteras(applyFilter(data, panelFilters.carteras));
 }
 
-function refreshPanel(panel) {
+async function refreshPanel(panel) {
   const filtered = applyFilter(data, panelFilters[panel]);
   const pfEl = document.getElementById(`pf-${panel}`);
   if (pfEl) pfEl.innerHTML = panelFilterBar(panel, data);
@@ -971,7 +971,7 @@ function refreshPanel(panel) {
     if (el) el.innerHTML = transferenciasBody(filtered);
   } else if (panel === 'apuestas') {
     const el = document.getElementById('apuestas-body');
-    if (el) el.innerHTML = apuestasBody(filtered);
+    if (el) el.innerHTML = apuestasBody(await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas));
   } else if (panel === 'inversiones') {
     const el = document.getElementById('inversiones-body');
     if (el) el.innerHTML = inversionesBody(filtered);
@@ -1071,6 +1071,13 @@ async function fetchAccountKpis(cuenta, period) {
   return res.json();
 }
 
+async function fetchRangeReport(path, f) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all' });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`${path}?${params}`);
+  return res.json();
+}
+
 async function setKpiFilter(type) {
   panelFilters.kpi = { type };
   document.querySelectorAll('.kpi-period-btn').forEach(b => {
@@ -1164,6 +1171,7 @@ async function render(acc, rows) {
 
   if (isOB) {
     const kpi = await fetchAccountKpis('openbank', kpiType);
+    const apuestasHtml = await renderApuestas();
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ob')}
@@ -1223,7 +1231,7 @@ async function render(acc, rows) {
         </div>
       </div>
 
-      ${renderApuestas(applyFilter(rows, panelFilters.apuestas))}
+      ${apuestasHtml}
       ${renderBottomGrid(acc)}
     `;
     setToday('f-fecha');
@@ -1728,56 +1736,34 @@ function rollingMean(vals, dates, days) {
 // ─────────────────────────────────────────────
 // ANALYSIS
 // ─────────────────────────────────────────────
-function apuestasBody(_rows) {
-  // All metrics computed from FULL data — period filter only controls which closed rows appear in the table.
-  // Using filtered rows for KPIs causes banca=0 bugs (bet placed before cutoff, closed inside it)
-  // and the paradox of 1m P&L > 3m P&L when a losing bet sits between months.
-  const allBets        = data.filter(r => r.Tipo === 'Apuestas');
-  const closedConcepts = new Set(data.filter(r => r.Tipo === 'Apuestas_r').map(r => r.Concepto));
-  const openBets       = allBets.filter(r => !closedConcepts.has(r.Concepto));
-  const openGroups     = groupBy(openBets, 'Concepto');
-  const openCount      = Object.keys(openGroups).length;
-  const openTotal      = r2(Object.values(openGroups).reduce((s, rs) => s + sumC(rs), 0));
-
-  const allClosedBets = computeApuestas(data);
-  const totalApostado = r2(sumC(allBets));
-  const totalPnL      = allClosedBets.length ? allClosedBets.at(-1).balH : 0;
-  const wins          = allClosedBets.filter(b => b.bal > 0).length;
-  const winRate       = allClosedBets.length ? r2(wins / allClosedBets.length * 100) : 0;
-
-  if (!openCount && !allClosedBets.length) return '<div class="empty">No hay apuestas registradas todavía.</div>';
-
-  // Filter closed bets by close date for table display only
-  const closedBets = applyFilterByCloseDate(allClosedBets, panelFilters.apuestas);
+function apuestasBody(report) {
+  if (!report.openCount && !report.closedCount) return '<div class="empty">No hay apuestas registradas todavía.</div>';
 
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Total apostado</div>
-      <div class="section-kpi-value">${eur(totalApostado)}</div>
-      <div class="section-kpi-sub">${allBets.length} apuesta${allBets.length !== 1 ? 's' : ''}</div>
+      <div class="section-kpi-value">${eur(report.totalApostado)}</div>
+      <div class="section-kpi-sub">${report.totalBets} apuesta${report.totalBets !== 1 ? 's' : ''}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">P&amp;L neto</div>
-      <div class="section-kpi-value ${totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(totalPnL)}</div>
+      <div class="section-kpi-value ${report.totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.totalPnL)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Win rate</div>
-      <div class="section-kpi-value ${allClosedBets.length ? (winRate >= 50 ? 'num-pos' : 'num-neg') : ''}">${allClosedBets.length ? winRate.toFixed(1) + '%' : '—'}</div>
-      ${allClosedBets.length ? `<div class="section-kpi-sub">${wins} de ${allClosedBets.length} cerradas</div>` : ''}
+      <div class="section-kpi-value ${report.closedCount ? (report.winRate >= 50 ? 'num-pos' : 'num-neg') : ''}">${report.closedCount ? report.winRate.toFixed(1) + '%' : '—'}</div>
+      ${report.closedCount ? `<div class="section-kpi-sub">${report.wins} de ${report.closedCount} cerradas</div>` : ''}
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">En juego ahora</div>
-      <div class="section-kpi-value" style="${openCount ? 'color:var(--blue)' : ''}">${openCount ? openCount + ' pos.' : '—'}</div>
-      ${openCount ? `<div class="section-kpi-sub">${eur(openTotal)}</div>` : ''}
+      <div class="section-kpi-value" style="${report.openCount ? 'color:var(--blue)' : ''}">${report.openCount ? report.openCount + ' pos.' : '—'}</div>
+      ${report.openCount ? `<div class="section-kpi-sub">${eur(report.openTotal)}</div>` : ''}
     </div>
   </div>`;
 
   let openHtml = '';
-  if (openCount > 0) {
-    const positions = Object.entries(openGroups)
-      .map(([c, rs]) => ({ concepto: c, fi: minD(rs), banca: r2(sumC(rs)) }))
-      .sort((a, b) => b.fi.localeCompare(a.fi));
-    const tbody = positions.map(p => `<tr>
+  if (report.openCount > 0) {
+    const tbody = report.openPositions.map(p => `<tr>
       <td><b>${esc(p.concepto)}</b></td>
       <td class="nowrap" style="color:var(--muted)">${fd(p.fi)}</td>
       <td class="r">${eur(p.banca)}</td>
@@ -1785,7 +1771,7 @@ function apuestasBody(_rows) {
         onclick="openCloseModal(this)" data-tipo="Apuestas" data-concepto="${escAttr(p.concepto)}" data-monto="${p.banca}">Cerrar</button></td>
     </tr>`).join('');
     openHtml = `<div style="border-bottom:1px solid var(--border)">
-      <div class="open-pos-header">● Posiciones abiertas · ${openCount}</div>
+      <div class="open-pos-header">● Posiciones abiertas · ${report.openCount}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Concepto</th><th>Inicio</th><th class="r">Banca</th><th class="r">Acción</th></tr></thead>
         <tbody>${tbody}</tbody>
@@ -1794,8 +1780,8 @@ function apuestasBody(_rows) {
   }
 
   let closedHtml = '';
-  if (closedBets.length > 0) {
-    const tbody = closedBets.map(r => `<tr>
+  if (report.closedPositions.length > 0) {
+    const tbody = report.closedPositions.map(r => `<tr>
       <td class="nowrap">${esc(r.Concepto)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fi)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fr)}</td>
@@ -1807,7 +1793,7 @@ function apuestasBody(_rows) {
       <td class="r ${r.crecH >= 0 ? 'num-pos' : 'num-neg'}">${r.crecH.toFixed(2)}%</td>
     </tr>`).join('');
     closedHtml = `<div>
-      <div class="closed-pos-header">Historial cerrado · ${closedBets.length}</div>
+      <div class="closed-pos-header">Historial cerrado · ${report.closedPositions.length}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr>
           <th>Concepto</th><th>Inicio</th><th>Cierre</th>
@@ -1821,13 +1807,14 @@ function apuestasBody(_rows) {
   return kpisHtml + openHtml + closedHtml;
 }
 
-function renderApuestas(rows) {
+async function renderApuestas() {
+  const report = await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas);
   return `<div class="section" style="margin-bottom:14px">
     <div class="section-head">
       <span class="section-title">Análisis de Apuestas</span>
       <div style="display:flex;gap:4px" id="pf-apuestas">${panelFilterBar('apuestas', data)}</div>
     </div>
-    <div id="apuestas-body">${apuestasBody(rows)}</div>
+    <div id="apuestas-body">${apuestasBody(report)}</div>
   </div>`;
 }
 
@@ -1985,30 +1972,6 @@ function renderTransferencias(rows) {
     </div>
     <div id="transferencias-body">${transferenciasBody(rows)}</div>
   </div>`;
-}
-
-function computeApuestas(rows) {
-  const groups = groupBy(rows.filter(r => r.Tipo === 'Apuestas' || r.Tipo === 'Apuestas_r'), 'Concepto');
-  const out = [];
-  for (const [c, rs] of Object.entries(groups)) {
-    const hechas   = rs.filter(r => r.Tipo === 'Apuestas');
-    const retornos = rs.filter(r => r.Tipo === 'Apuestas_r');
-    if (!retornos.length) continue;
-    const banca    = sumC(hechas);
-    const devuelto = sumC(retornos);
-    const bal      = r2(devuelto - banca);
-    const crec     = banca > 0 ? r2(bal / banca * 100) : 0;
-    out.push({ Concepto: c, fi: minD(hechas), fr: maxD(retornos), banca: r2(banca), devuelto: r2(devuelto), bal, crec });
-  }
-  out.sort((a, b) => a.fr.localeCompare(b.fr));
-  let bH = 0, bAcum = 0;
-  for (const r of out) {
-    bH    = r2(bH + r.bal);
-    bAcum = r2(bAcum + r.banca);
-    r.balH  = bH;
-    r.crecH = bAcum > 0 ? r2(bH / bAcum * 100) : 0;
-  }
-  return out;
 }
 
 function computeInversiones(rows) {

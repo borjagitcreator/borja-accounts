@@ -28,6 +28,7 @@ from application.use_cases.add_movement import AddMovementUseCase
 from application.use_cases.delete_movement import DeleteMovementUseCase
 from application.use_cases.edit_movement import EditMovementUseCase
 from application.use_cases.get_account_kpis import GetAccountKPIsUseCase
+from application.use_cases.get_betting_report import GetBettingReportUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
 from domain.services.ledger import LedgerService
@@ -129,6 +130,16 @@ def get_account_kpis(cuenta: str, period: str = "mes"):
         "gastos": kpi.gastos, "gastosDelta": {"diff": kpi.gastos_delta.diff},
         "balance": kpi.balance, "balanceDelta": {"diff": kpi.balance_delta.diff},
     }
+
+
+@app.get("/api/accounts/{cuenta}/apuestas")
+def get_apuestas(cuenta: str, range: str = "all", year: int | None = None):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    report, err = _run(GetBettingReportUseCase(repository).execute, cuenta, range, year, _reference_now())
+    if err:
+        return err
+    return report
 
 
 @app.post("/api/movimiento/{cuenta}")

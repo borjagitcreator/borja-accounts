@@ -1,12 +1,16 @@
 """
-Traducción literal de computeKPIs / calendarMonthStart / monthKey / periodSlices
+Traducción de computeKPIs / calendarMonthStart / monthKey / periodSlices
 (index.html) al backend -- Bloque 4 del refactor.
 
-Preserva a propósito un bug real de zona horaria (ver docs/ARCHITECTURE.md y
-tests/golden_master/README.md): `pm` (periodo anterior, rama kpi_type="mes")
-reproduce `new Date(y, m, 1).toISOString().slice(0,7)` bajo Europe/Madrid,
-que con un TZ de offset positivo puede resolver al mes anterior al que
-realmente corresponde. Corregirlo es un commit aparte y deliberado, no este.
+Corrige un bug real de zona horaria que existía en el original (ver
+docs/ARCHITECTURE.md y tests/golden_master/README.md para el detalle):
+`pm` (período anterior, rama kpi_type="mes") reproducía
+`new Date(y, m, 1).toISOString().slice(0,7)`, que bajo un TZ de offset
+positivo (Europe/Madrid) construye medianoche LOCAL y, al convertirla a
+UTC para leer el mes, cruza hacia el mes anterior al que corresponde. El
+fix: no pasar por UTC en absoluto para decidir "a qué mes de calendario
+pertenece esta fecha" -- usar siempre los componentes locales del
+instante, igual que ya hacía correctamente calendar_month_start().
 
 `reference` (instante UTC) sustituye a `new Date()`/`datetime.now()`: nunca
 se lee el reloj real aquí, se recibe explícito desde el caso de uso -- así
@@ -21,7 +25,6 @@ from domain.entities import Movement
 from domain.value_objects import TIPOS_NEGATIVOS, TIPOS_POSITIVOS
 
 TZ = ZoneInfo("Europe/Madrid")
-UTC = ZoneInfo("UTC")
 
 TIPOS_KPI_ING = {"Nómina", "Ingreso", "Devolución"}
 TIPOS_KPI_GAS = {"Gasto", "Transferencia"}
@@ -50,14 +53,12 @@ def calendar_month_start(reference_local: datetime, months_back: int) -> str:
     return f"{year:04d}-{month0 + 1:02d}-01"
 
 
-def _month_key_with_tz_bug(local_year: int, local_month0: int, offset: int) -> str:
-    """new Date(year, month0+offset, 1).toISOString().slice(0,7): construye
-    medianoche LOCAL (Europe/Madrid) a partir de componentes locales y la
-    convierte a UTC -- el paso que introduce el bug."""
+def _month_key(local_year: int, local_month0: int, offset: int) -> str:
+    """'YYYY-MM' del mes que es `offset` meses respecto a (local_year,
+    local_month0), en componentes de calendario locales -- nunca pasa por
+    UTC, así que no puede cruzar de mes al convertir zona horaria."""
     year, month0 = _normalize_month(local_year, local_month0 + offset)
-    local_midnight = datetime(year, month0 + 1, 1, tzinfo=TZ)
-    utc = local_midnight.astimezone(UTC)
-    return f"{utc.year:04d}-{utc.month:02d}"
+    return f"{year:04d}-{month0 + 1:02d}"
 
 
 def _sum_period(movements: list[Movement], in_period) -> dict:
@@ -113,8 +114,8 @@ def compute_kpis(movements: list[Movement], kpi_type: str, reference: datetime) 
         curr = _sum_period(movements, lambda m: _fecha_str(m).startswith(y))
         prv = _sum_period(movements, lambda m: _fecha_str(m).startswith(py))
     else:
-        m_key = reference.strftime("%Y-%m")  # sin bug: instante directo en UTC
-        pm_key = _month_key_with_tz_bug(reference_local.year, reference_local.month - 1, -1)
+        m_key = _month_key(reference_local.year, reference_local.month - 1, 0)
+        pm_key = _month_key(reference_local.year, reference_local.month - 1, -1)
         curr = _sum_period(movements, lambda m: _fecha_str(m)[:7] == m_key)
         prv = _sum_period(movements, lambda m: _fecha_str(m)[:7] == pm_key)
 

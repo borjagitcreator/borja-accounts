@@ -1054,11 +1054,11 @@
     "mes": {
       "balance": 665.0,
       "balanceDelta": {
-        "diff": 195.0
+        "diff": 515.0
       },
       "gastos": 1135.0,
       "gastosDelta": {
-        "diff": -75.0
+        "diff": -515.0
       },
       "ingresos": 1800.0,
       "ingresosDelta": {

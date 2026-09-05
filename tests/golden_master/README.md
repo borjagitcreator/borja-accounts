@@ -14,9 +14,11 @@ a bloque sin arriesgar los datos reales (`openbank.csv`/`ibkr.csv`, en `.gitigno
 
 ## Por qué el TZ está fijado a `Europe/Madrid` y no a `UTC`
 
-`monthKey()` y las ramas `kpiType === 'mes'` de `computeKPIs`/`periodSlices` (`index.html`) calculan el "mes actual" con `new Date(y, m, 1).toISOString().slice(0, 7)`. En un TZ de offset positivo (como `Europe/Madrid`), esa conversión a UTC cruza medianoche hacia atrás y resuelve al **mes anterior** en la mayoría de los cálculos que reconstruyen la fecha a partir de getters locales (`pm` en `computeKPIs`, `periodSlices`, `monthKey`, `gastoAlertHtml`, `topMerchantsHtml`). Es un bug real de producción, no un artefacto de este harness — se puede comprobar comparando `openbank_gasto_alert` en `snapshot_frontend.json` (usa el mes calculado con el bug) contra el KPI "Gastos · este mes" (que sí usa el mes correcto, por una ruta de cálculo distinta que no pasa por getters locales).
+Es la zona horaria real del usuario, y varios cálculos de calendario (`calendarMonthStart`, los filtros `1m`/`3m`/`6m`/`año`) dependen de los componentes de fecha *locales* — fijar `UTC` haría que el golden master validara un comportamiento que nadie experimenta en el navegador real.
 
-El golden master fija `Europe/Madrid` a propósito para **capturar este comportamiento tal cual es hoy**. Corregirlo es una decisión de producto explícita para el Bloque 4 (mover la lógica financiera al backend) — si se corrige ahí, este snapshot se regenera a mano y el commit documenta el cambio de comportamiento.
+**Bug histórico, ya corregido** (ver el commit que corrige `domain/services/kpi.py`, `monthKey()` y `periodSlices()`): `monthKey()` y la rama `kpiType === 'mes'` de `periodSlices` calculaban el "mes anterior" con `new Date(y, m, 1).toISOString().slice(0, 7)`. En un TZ de offset positivo como `Europe/Madrid`, esa conversión a UTC cruza medianoche hacia atrás y resolvía al mes anterior al que realmente correspondía — de forma muy visible en `topMerchantsHtml()` ("Top del mes"), que llegó a mostrar los conceptos del mes **anterior** bajo la etiqueta "este mes". El equivalente en el backend (`domain/services/kpi.py`, ya migrado en el Bloque 4) tenía el mismo bug y se corrigió a la vez. El fix: no pasar por UTC para decidir a qué mes de calendario pertenece una fecha — usar siempre los componentes locales del instante, igual que ya hacía correctamente `calendarMonthStart()`.
+
+Los snapshots (`snapshot_backend.json`, `snapshot_frontend.json`) capturan el comportamiento **ya corregido**. Cualquier futuro cambio de comportamiento intencional sigue el mismo protocolo: se regeneran a mano y el commit documenta los números antes/después.
 
 ## Regenerar (solo tras un cambio de comportamiento intencional y revisado)
 

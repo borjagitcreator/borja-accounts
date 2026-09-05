@@ -1315,9 +1315,8 @@ function periodSlices(kpiType) {
       inPrvFr:  r => r.fr.startsWith(py),
     };
   }
-  const m  = new Date().toISOString().slice(0, 7);
-  const _d = new Date();
-  const pm = new Date(_d.getFullYear(), _d.getMonth() - 1, 1).toISOString().slice(0, 7);
+  const m  = monthKey(0);
+  const pm = monthKey(-1);
   return {
     inCurr: r => r.Fecha.slice(0, 7) === m,
     inPrv:  r => r.Fecha.slice(0, 7) === pm,
@@ -1417,7 +1416,8 @@ function kpiCardsIbkrHtml(kpi) {
 
 function monthKey(offset = 0) {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString().slice(0, 7);
+  const start = new Date(d.getFullYear(), d.getMonth() + offset, 1);
+  return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function gastoSumForMonth(ym) {

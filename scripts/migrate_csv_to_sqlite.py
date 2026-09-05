@@ -15,8 +15,8 @@ Reglas de seguridad:
   real durante el Bloque 2, ver memoria de proyecto.
 
 Uso:
-    python scripts/migrate_csv_to_sqlite.py --db-path borja_accounts.db --dry-run
-    python scripts/migrate_csv_to_sqlite.py --db-path borja_accounts.db
+    python scripts/migrate_csv_to_sqlite.py --db-path accounts.db --dry-run
+    python scripts/migrate_csv_to_sqlite.py --db-path accounts.db
 """
 import argparse
 import os

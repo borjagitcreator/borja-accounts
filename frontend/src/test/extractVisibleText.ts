@@ -1,7 +1,7 @@
 /**
  * Recorre el DOM renderizado y extrae los nodos de texto no vacíos, en el
  * mismo orden y con el mismo criterio (trim + descartar vacíos) que
- * tests/golden_master/extract_frontend_values.py aplica sobre el HTML del
+ * tests/extract_frontend_values.py aplica sobre el HTML del
  * vanilla JS. La comparación entre ambos exige que cada elemento con texto
  * interpolado use un único template string como hijo (ver KpiCards.tsx) --
  * si React fragmenta el texto en varios nodos, la lista deja de casar

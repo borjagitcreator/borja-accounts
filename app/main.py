@@ -51,7 +51,7 @@ ARCHIVOS = set(TIPOS_POR_CUENTA)  # nombres de cuenta conocidos -- ya no rutas d
 # explícito) -- pero esta capa de configuración sí resuelve uno real, para
 # que `run.sh`/producción funcionen sin variables de entorno adicionales.
 # El harness pasa siempre su propia ruta temporal vía BORJA_ACCOUNTS_DB.
-DB_PATH = os.environ.get("BORJA_ACCOUNTS_DB", os.path.join(BASE_DIR, "borja_accounts.db"))
+DB_PATH = os.environ.get("BORJA_ACCOUNTS_DB", os.path.join(BASE_DIR, "accounts.db"))
 
 app = FastAPI()
 

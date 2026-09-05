@@ -80,10 +80,11 @@ backend/
       api/
         routers/              # accounts.py, movements.py, portfolios.py, transfers.py, broker.py
         schemas/               # pydantic request/response
-  tests/
+  tests/                      # fixtures + snapshots de outputs del app.py/index.html actuales
+                               # (referencia temporal de la transición, ver §0 -- se retira al
+                               #  cerrar el refactor, no es infraestructura de test permanente)
     domain/
     application/
-    golden_master/            # fixtures + snapshots de outputs del app.py/index.html actuales
 frontend/
   src/
     api/                      # cliente HTTP tipado hacia backend (nunca habla con el CPGW directamente)
@@ -195,6 +196,8 @@ Antes de mover una sola línea de `app.py`/`index.html`:
 4. Tests que comparan cualquier cambio futuro contra ese snapshot.
 
 Este mismo snapshot es el **test de aceptación del rewrite a React** (Bloque 5): mismo fixture de entrada, mismos números renderizados, solo cambia la tecnología de presentación. Ningún bloque se da por válido si no pasa este harness.
+
+**Naturaleza temporal.** Este harness (`tests/`: `scenario.py`, `run_frontend_harness.mjs`, `snapshot_*.json`, `extract_frontend_values.py`) protege la transición mientras dura el refactor -- no es infraestructura de test permanente del repo. Referencia explícitamente `index.html` (vanilla, ya no servido) y el `app.py`/Flask original. Cuando el refactor se dé por cerrado sin reservas, se retira y `tests/` queda con la suite de tests "de servicio" normal del proyecto (dominio, aplicación, API), sin artefactos que cuenten la historia de la migración. Documentado aquí y en el propio historial de commits -- no en el estado final del repo.
 
 ## 8. Plan de bloques (commits independientes)
 

@@ -9,13 +9,13 @@ con timestamp idéntico para validar la estabilidad del mergesort).
 Reutiliza recalcular_saldo() de app.py para que el Saldo del fixture sea
 consistente con el comportamiento real del sistema, no aritmética manual.
 
-Uso: python tests/golden_master/build_fixture.py
+Uso: python tests/build_fixture.py
 """
 import sys
 import os
 import importlib.util
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
 
 spec = importlib.util.spec_from_file_location("app", os.path.join(REPO_ROOT, "app.py"))

@@ -10,7 +10,7 @@ import os
 
 from scenario import run_scenario
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
     result = run_scenario(REPO_ROOT)

@@ -3,7 +3,7 @@ Traducción de computeKPIs / calendarMonthStart / monthKey / periodSlices
 (index.html) al backend -- Bloque 4 del refactor.
 
 Corrige un bug real de zona horaria que existía en el original (ver
-docs/ARCHITECTURE.md y tests/golden_master/README.md para el detalle):
+docs/ARCHITECTURE.md y tests/README.md para el detalle):
 `pm` (período anterior, rama kpi_type="mes") reproducía
 `new Date(y, m, 1).toISOString().slice(0,7)`, que bajo un TZ de offset
 positivo (Europe/Madrid) construye medianoche LOCAL y, al convertirla a

@@ -10,6 +10,9 @@ import type {
   MutationResult,
   Patrimonio,
   PortfolioReport,
+  TransferRequest,
+  TransferResult,
+  TransfersReport,
 } from './types';
 import type { RangeFilter } from '../features/filters/RangeFilter';
 
@@ -72,4 +75,18 @@ export function fetchApuestas(filter: RangeFilter): Promise<BettingReport> {
 
 export function fetchCarteras(filter: RangeFilter): Promise<PortfolioReport> {
   return fetchRangeReport('/api/accounts/ibkr/carteras', filter);
+}
+
+export function fetchTransferencias(filter: RangeFilter): Promise<TransfersReport> {
+  return fetchRangeReport('/api/accounts/ibkr/transferencias', filter);
+}
+
+export async function submitTransfer(body: TransferRequest): Promise<TransferResult> {
+  const res = await fetch('/api/transferencia', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  return { ok: res.ok, ...json };
 }

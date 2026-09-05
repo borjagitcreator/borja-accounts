@@ -126,3 +126,33 @@ export interface PortfolioReport {
   totalPnL: number;
   totalRoi: number;
 }
+
+export interface TransferItem {
+  Fecha: string;
+  Concepto: string;
+  Total: number;
+  dir: 'in' | 'out';
+  label: string;
+}
+
+export interface TransfersReport {
+  items: TransferItem[];
+  lifetimeRec: number;
+  lifetimeSent: number;
+  lifetimeNet: number;
+  totalCount: number;
+}
+
+export interface TransferRequest {
+  origen: AccountId;
+  destino: AccountId;
+  total: number;
+  fecha: string;
+}
+
+export interface TransferResult {
+  ok: boolean;
+  saldo_origen: number;
+  saldo_destino: number;
+  error?: string;
+}

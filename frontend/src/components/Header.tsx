@@ -1,7 +1,7 @@
 import { eur } from '../lib/format';
 import type { Patrimonio } from '../api/types';
 
-export function Header({ patrimonio }: { patrimonio: Patrimonio | null }) {
+export function Header({ patrimonio, onOpenTransfer }: { patrimonio: Patrimonio | null; onOpenTransfer: () => void }) {
   return (
     <header className="header">
       <div className="brand">
@@ -23,6 +23,9 @@ export function Header({ patrimonio }: { patrimonio: Patrimonio | null }) {
         )}
       </div>
       <div className="spacer" />
+      <button className="btn-transfer" onClick={onOpenTransfer}>
+        ⇄ Transferencia
+      </button>
     </header>
   );
 }

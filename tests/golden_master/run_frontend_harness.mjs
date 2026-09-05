@@ -81,6 +81,7 @@ function loadBackendFixture() {
     // recalcular esto, solo lo pinta.
     openbankKpisByPeriod: snap.openbank_kpis_by_period,
     openbankApuestasReport3m: snap.openbank_apuestas_report_3m,
+    ibkrKpisByPeriod: snap.ibkr_kpis_by_period,
   };
 }
 
@@ -90,7 +91,7 @@ function loadBackendFixture() {
 // termina en un `return {...}` explícito para exponerlas por closure, sin
 // tocar una sola línea del cuerpo original.
 const EXPOSE = [
-  "computeIbkrKPIs", "kpiCardsHtml", "kpiCardsIbkrHtml",
+  "kpiCardsHtml", "kpiCardsIbkrHtml",
   "apuestasBody", "inversionesBody", "transferenciasBody",
   "gastoAlertHtml", "topMerchantsHtml", "renderMovimientos", "searchedMovs",
   "chartSaldo", "chartMensual", "chartGastos", "chartDonut", "chartCarteras",
@@ -149,7 +150,7 @@ function run() {
   result.ibkr_kpis = {};
   for (const t of KPI_TYPES) {
     api.setPanelFilter("kpi", { type: t });
-    result.ibkr_kpis[t] = api.kpiCardsIbkrHtml(api.computeIbkrKPIs(fixture.ibkr));
+    result.ibkr_kpis[t] = api.kpiCardsIbkrHtml(fixture.ibkrKpisByPeriod[t]);
   }
   result.ibkr_inversiones_body = api.inversionesBody(fixture.ibkr);
   result.ibkr_transferencias_body = api.transferenciasBody(fixture.ibkr);

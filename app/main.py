@@ -29,6 +29,7 @@ from application.use_cases.delete_movement import DeleteMovementUseCase
 from application.use_cases.edit_movement import EditMovementUseCase
 from application.use_cases.get_account_kpis import GetAccountKPIsUseCase
 from application.use_cases.get_betting_report import GetBettingReportUseCase
+from application.use_cases.get_ibkr_kpis import GetIbkrKPIsUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
 from domain.services.ledger import LedgerService
@@ -129,6 +130,21 @@ def get_account_kpis(cuenta: str, period: str = "mes"):
         "ingresos": kpi.ingresos, "ingresosDelta": {"diff": kpi.ingresos_delta.diff},
         "gastos": kpi.gastos, "gastosDelta": {"diff": kpi.gastos_delta.diff},
         "balance": kpi.balance, "balanceDelta": {"diff": kpi.balance_delta.diff},
+    }
+
+
+@app.get("/api/accounts/{cuenta}/ibkr-kpis")
+def get_ibkr_kpis(cuenta: str, period: str = "mes"):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    kpi, err = _run(GetIbkrKPIsUseCase(repository).execute, cuenta, period, _reference_now())
+    if err:
+        return err
+    return {
+        "saldo": kpi.saldo,
+        "aportado": kpi.aportado, "aportadoDelta": {"diff": kpi.aportado_delta.diff},
+        "enCarteras": kpi.en_carteras, "enCarterasCount": kpi.en_carteras_count,
+        "pnl": kpi.pnl, "pnlDelta": {"diff": kpi.pnl_delta.diff},
     }
 
 

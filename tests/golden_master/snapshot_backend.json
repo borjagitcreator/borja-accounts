@@ -479,6 +479,47 @@
     "ibkr": 1305.0,
     "openbank": 8720.0
   },
+  "ibkr_kpis_by_period": {
+    "año": {
+      "aportado": 400.0,
+      "aportadoDelta": {
+        "diff": 400.0
+      },
+      "enCarteras": 250.0,
+      "enCarterasCount": 1,
+      "pnl": 50.0,
+      "pnlDelta": {
+        "diff": 50.0
+      },
+      "saldo": 1205.0
+    },
+    "mes": {
+      "aportado": 0,
+      "aportadoDelta": {
+        "diff": -400.0
+      },
+      "enCarteras": 250.0,
+      "enCarterasCount": 1,
+      "pnl": 0,
+      "pnlDelta": {
+        "diff": 50.0
+      },
+      "saldo": 1205.0
+    },
+    "trimestre": {
+      "aportado": 400.0,
+      "aportadoDelta": {
+        "diff": 400.0
+      },
+      "enCarteras": 250.0,
+      "enCarterasCount": 1,
+      "pnl": 50.0,
+      "pnlDelta": {
+        "diff": 50.0
+      },
+      "saldo": 1205.0
+    }
+  },
   "initial_data_ibkr": [
     {
       "Concepto": "Apertura de cuenta",

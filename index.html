@@ -1071,6 +1071,11 @@ async function fetchAccountKpis(cuenta, period) {
   return res.json();
 }
 
+async function fetchIbkrKpis(period) {
+  const res = await fetch(`/api/accounts/ibkr/ibkr-kpis?period=${encodeURIComponent(period)}`);
+  return res.json();
+}
+
 async function fetchRangeReport(path, f) {
   const params = new URLSearchParams({ range: (f && f.type) || 'all' });
   if (f && f.year !== undefined) params.set('year', f.year);
@@ -1085,7 +1090,7 @@ async function setKpiFilter(type) {
   });
   const el = document.getElementById('kpi-cards');
   if (!el) return;
-  if (account === 'ibkr') el.innerHTML = kpiCardsIbkrHtml(computeIbkrKPIs(data));
+  if (account === 'ibkr') el.innerHTML = kpiCardsIbkrHtml(await fetchIbkrKpis(type));
   else el.innerHTML = kpiCardsHtml(await fetchAccountKpis('openbank', type));
 }
 
@@ -1244,7 +1249,7 @@ async function render(acc, rows) {
     });
 
   } else {
-    const kpi = computeIbkrKPIs(rows);
+    const kpi = await fetchIbkrKpis(kpiType);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ik')}
@@ -1302,37 +1307,6 @@ async function render(acc, rows) {
 // ─────────────────────────────────────────────
 // KPIs
 // ─────────────────────────────────────────────
-function periodSlices(kpiType) {
-  if (kpiType === 'trimestre') {
-    const cut  = calendarMonthStart(2);
-    const cut2 = calendarMonthStart(5);
-    return {
-      inCurr: r => r.Fecha >= cut,
-      inPrv:  r => r.Fecha >= cut2 && r.Fecha < cut,
-      inCurrFr: r => r.fr >= cut,
-      inPrvFr:  r => r.fr >= cut2 && r.fr < cut,
-    };
-  }
-  if (kpiType === 'año') {
-    const y  = new Date().getFullYear().toString();
-    const py = (new Date().getFullYear() - 1).toString();
-    return {
-      inCurr: r => r.Fecha.startsWith(y),
-      inPrv:  r => r.Fecha.startsWith(py),
-      inCurrFr: r => r.fr.startsWith(y),
-      inPrvFr:  r => r.fr.startsWith(py),
-    };
-  }
-  const m  = monthKey(0);
-  const pm = monthKey(-1);
-  return {
-    inCurr: r => r.Fecha.slice(0, 7) === m,
-    inPrv:  r => r.Fecha.slice(0, 7) === pm,
-    inCurrFr: r => r.fr.slice(0, 7) === m,
-    inPrvFr:  r => r.fr.slice(0, 7) === pm,
-  };
-}
-
 function isTransferIn(r) {
   if (r.Tipo !== 'Ingreso') return false;
   const c = (r.Concepto || '').toLowerCase();
@@ -1354,47 +1328,6 @@ function ibkrTransfers(rows) {
       label: isTransferIn(r) ? '← Openbank' : '→ Openbank',
     }))
     .sort((a, b) => b.Fecha.localeCompare(a.Fecha));
-}
-
-function openCarterasSnapshot(allRows) {
-  const allInv = allRows.filter(r => r.Tipo === 'Inversión');
-  const closed = new Set(allRows.filter(r => r.Tipo === 'Inversión_r').map(r => r.Concepto));
-  const open = allInv.filter(r => !closed.has(r.Concepto));
-  const groups = groupBy(open, 'Concepto');
-  const count = Object.keys(groups).length;
-  const total = r2(Object.values(groups).reduce((s, rs) => s + sumC(rs), 0));
-  return { count, total };
-}
-
-function computeIbkrKPIs(allRows) {
-  const sorted = [...allRows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const saldo  = sorted.length ? sorted.at(-1).Saldo : 0;
-  const slices = periodSlices(panelFilters.kpi.type);
-  const open   = openCarterasSnapshot(allRows);
-
-  const aportado = rs => {
-    let rec = 0, sent = 0;
-    for (const r of rs) {
-      if (isTransferIn(r)) rec += r.Total;
-      else if (isTransferOut(r)) sent += r.Total;
-    }
-    return r2(rec - sent);
-  };
-  const currA = aportado(allRows.filter(slices.inCurr));
-  const prvA  = aportado(allRows.filter(slices.inPrv));
-
-  const closed = computeInversiones(allRows);
-  const pnl = list => r2(list.reduce((s, r) => s + r.bal, 0));
-  const currP = pnl(closed.filter(slices.inCurrFr));
-  const prvP  = pnl(closed.filter(slices.inPrvFr));
-
-  const mk = (c, p) => ({ diff: r2(c - p) });
-  return {
-    saldo,
-    aportado: currA, aportadoDelta: mk(currA, prvA),
-    enCarteras: open.total, enCarterasCount: open.count,
-    pnl: currP, pnlDelta: mk(currP, prvP),
-  };
 }
 
 function kpiCardsIbkrHtml(kpi) {

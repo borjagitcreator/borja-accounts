@@ -96,6 +96,10 @@ def run_scenario(repo_root):
             result["openbank_apuestas_report_3m"] = client.get(
                 "/api/accounts/openbank/apuestas?range=3m"
             ).json()
+            result["ibkr_kpis_by_period"] = {
+                period: client.get(f"/api/accounts/ibkr/ibkr-kpis?period={period}").json()
+                for period in ("mes", "trimestre", "año")
+            }
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []

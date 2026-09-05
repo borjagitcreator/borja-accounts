@@ -31,6 +31,8 @@ from application.use_cases.get_account_kpis import GetAccountKPIsUseCase
 from application.use_cases.get_betting_report import GetBettingReportUseCase
 from application.use_cases.get_ibkr_kpis import GetIbkrKPIsUseCase
 from application.use_cases.get_portfolio_report import GetPortfolioReportUseCase
+from application.use_cases.get_gastos_mes_actual import GetGastosMesActualUseCase
+from application.use_cases.get_gastos_ranking import GetGastosRankingUseCase
 from application.use_cases.get_transfers_report import GetTransfersReportUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
@@ -148,6 +150,28 @@ def get_ibkr_kpis(cuenta: str, period: str = "mes"):
         "enCarteras": kpi.en_carteras, "enCarterasCount": kpi.en_carteras_count,
         "pnl": kpi.pnl, "pnlDelta": {"diff": kpi.pnl_delta.diff},
     }
+
+
+@app.get("/api/accounts/{cuenta}/gastos-mes-actual")
+def get_gastos_mes_actual(cuenta: str):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    report, err = _run(GetGastosMesActualUseCase(repository).execute, cuenta, _reference_now())
+    if err:
+        return err
+    return report
+
+
+@app.get("/api/accounts/{cuenta}/gastos-ranking")
+def get_gastos_ranking(cuenta: str, range: str = "all", year: int | None = None, mode: str = "media"):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    report, err = _run(
+        GetGastosRankingUseCase(repository).execute, cuenta, range, year, _reference_now(), mode,
+    )
+    if err:
+        return err
+    return report
 
 
 @app.get("/api/accounts/{cuenta}/transferencias")

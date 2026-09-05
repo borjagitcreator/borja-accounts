@@ -1149,6 +1149,130 @@
     "winRate": 50.0,
     "wins": 1
   },
+  "openbank_gastos_mes_actual": {
+    "alert": {
+      "avg": 1230.0,
+      "curTotal": 1135.0,
+      "diff": -95.0,
+      "isWarning": false,
+      "monthsCount": 3,
+      "pct": -7.72
+    },
+    "topMerchants": [
+      {
+        "concepto": "Alquiler",
+        "total": 900.0
+      },
+      {
+        "concepto": "Supermercado",
+        "total": 130.0
+      },
+      {
+        "concepto": "Transporte",
+        "total": 60.0
+      },
+      {
+        "concepto": "Restaurante",
+        "total": 45.0
+      }
+    ]
+  },
+  "openbank_gastos_ranking_3m_media": {
+    "donut": {
+      "hasGastos": true,
+      "labels": [
+        "Alquiler",
+        "Supermercado",
+        "Transporte",
+        "Gimnasio",
+        "Restaurante"
+      ],
+      "values": [
+        2700.0,
+        590.0,
+        180.0,
+        80.0,
+        45.0
+      ]
+    },
+    "ranking": {
+      "entries": [
+        {
+          "concepto": "Alquiler",
+          "valor": 900.0
+        },
+        {
+          "concepto": "Supermercado",
+          "valor": 196.67
+        },
+        {
+          "concepto": "Transporte",
+          "valor": 60.0
+        },
+        {
+          "concepto": "Gimnasio",
+          "valor": 26.67
+        },
+        {
+          "concepto": "Restaurante",
+          "valor": 15.0
+        }
+      ],
+      "hasGastos": true,
+      "hoverSuffix": "€/mes"
+    }
+  },
+  "openbank_gastos_ranking_all_media": {
+    "donut": {
+      "hasGastos": true,
+      "labels": [
+        "Alquiler",
+        "Supermercado",
+        "Transporte",
+        "Gimnasio",
+        "Reparación bici",
+        "Restaurante"
+      ],
+      "values": [
+        6300.0,
+        1540.0,
+        420.0,
+        240.0,
+        85.0,
+        45.0
+      ]
+    },
+    "ranking": {
+      "entries": [
+        {
+          "concepto": "Alquiler",
+          "valor": 900.0
+        },
+        {
+          "concepto": "Supermercado",
+          "valor": 220.0
+        },
+        {
+          "concepto": "Transporte",
+          "valor": 60.0
+        },
+        {
+          "concepto": "Gimnasio",
+          "valor": 34.29
+        },
+        {
+          "concepto": "Reparación bici",
+          "valor": 12.14
+        },
+        {
+          "concepto": "Restaurante",
+          "valor": 6.43
+        }
+      ],
+      "hasGastos": true,
+      "hoverSuffix": "€/mes"
+    }
+  },
   "openbank_kpis_by_period": {
     "año": {
       "balance": 3655.0,

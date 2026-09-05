@@ -84,6 +84,9 @@ function loadBackendFixture() {
     ibkrKpisByPeriod: snap.ibkr_kpis_by_period,
     ibkrCarterasReport3m: snap.ibkr_carteras_report_3m,
     ibkrTransferenciasReport3m: snap.ibkr_transferencias_report_3m,
+    openbankGastosMesActual: snap.openbank_gastos_mes_actual,
+    openbankGastosRanking3mMedia: snap.openbank_gastos_ranking_3m_media,
+    openbankGastosRankingAllMedia: snap.openbank_gastos_ranking_all_media,
   };
 }
 
@@ -131,8 +134,8 @@ function run() {
     api.setPanelFilter("kpi", { type: t });
     result.openbank_kpis[t] = api.kpiCardsHtml(fixture.openbankKpisByPeriod[t]);
   }
-  result.openbank_gasto_alert = api.gastoAlertHtml();
-  result.openbank_top_merchants = api.topMerchantsHtml();
+  result.openbank_gasto_alert = api.gastoAlertHtml(fixture.openbankGastosMesActual.alert);
+  result.openbank_top_merchants = api.topMerchantsHtml(fixture.openbankGastosMesActual.topMerchants);
   result.openbank_apuestas_body = api.apuestasBody(fixture.openbankApuestasReport3m);
   result.openbank_movimientos_default = api.renderMovimientos(api.searchedMovs());
 
@@ -141,8 +144,8 @@ function run() {
   api.setPanelFilter("gastos", { type: "all" });
   api.chartSaldo(api.applyFilter(fixture.openbank, { type: "all" }));
   api.chartMensual(api.applyFilter(fixture.openbank, { type: "all" }));
-  api.chartGastos(api.applyFilter(fixture.openbank, { type: "all" }));
-  api.chartDonut(api.applyFilter(fixture.openbank, { type: "all" }));
+  api.chartGastos(fixture.openbankGastosRankingAllMedia.ranking);
+  api.chartDonut(fixture.openbankGastosRankingAllMedia.donut);
   result.openbank_charts_all = JSON.parse(JSON.stringify(sandbox.__capturedPlots));
   for (const k of Object.keys(sandbox.__capturedPlots)) delete sandbox.__capturedPlots[k];
 

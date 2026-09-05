@@ -108,6 +108,18 @@ def run_scenario(repo_root):
             result["ibkr_transferencias_report_3m"] = client.get(
                 "/api/accounts/ibkr/transferencias?range=3m"
             ).json()
+            result["openbank_gastos_mes_actual"] = client.get(
+                "/api/accounts/openbank/gastos-mes-actual"
+            ).json()
+            # panelFilters.gastos por defecto es {type:'3m'}; gastosMode por defecto es 'media'.
+            result["openbank_gastos_ranking_3m_media"] = client.get(
+                "/api/accounts/openbank/gastos-ranking?range=3m&mode=media"
+            ).json()
+            # El harness frontend fuerza panelFilters.gastos={type:'all'} solo para la
+            # captura "openbank_charts_all" (histórico completo) -- ver run_frontend_harness.mjs.
+            result["openbank_gastos_ranking_all_media"] = client.get(
+                "/api/accounts/openbank/gastos-ranking?range=all&mode=media"
+            ).json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []

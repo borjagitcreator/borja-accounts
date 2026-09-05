@@ -931,12 +931,12 @@ function setPanelFilter(panel, type, year) {
   refreshPanel(panel);
 }
 
-function setGastosMode(mode) {
+async function setGastosMode(mode) {
   gastosMode = mode;
   document.querySelectorAll('.gastos-mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  chartGastos(applyFilter(data, panelFilters.gastos));
+  chartGastos((await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode)).ranking);
 }
 
 function setCarterasMode(mode) {
@@ -957,8 +957,9 @@ async function refreshPanel(panel) {
   } else if (panel === 'mensual') {
     chartMensual(filtered);
   } else if (panel === 'gastos') {
-    chartGastos(filtered);
-    chartDonut(filtered);
+    const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
+    chartGastos(gastosRanking.ranking);
+    chartDonut(gastosRanking.donut);
   } else if (panel === 'carteras') {
     chartCarteras(filtered);
   } else if (panel === 'transferencias') {
@@ -1172,6 +1173,8 @@ async function render(acc, rows) {
   if (isOB) {
     const kpi = await fetchAccountKpis('openbank', kpiType);
     const apuestasHtml = await renderApuestas();
+    const gastosMesActual = await fetchGastosMesActual('openbank');
+    const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ob')}
@@ -1189,7 +1192,7 @@ async function render(acc, rows) {
       <div class="kpis" id="kpi-cards">
         ${kpiCardsHtml(kpi)}
       </div>
-      ${gastoAlertHtml()}
+      ${gastoAlertHtml(gastosMesActual.alert)}
 
       <div class="charts-grid">
         <div class="chart-card">
@@ -1227,7 +1230,7 @@ async function render(acc, rows) {
               <div id="c-donut" style="height:480px"></div>
             </div>
           </div>
-          <div id="merchants-strip">${topMerchantsHtml()}</div>
+          <div id="merchants-strip">${topMerchantsHtml(gastosMesActual.topMerchants)}</div>
         </div>
       </div>
 
@@ -1239,8 +1242,8 @@ async function render(acc, rows) {
     requestAnimationFrame(() => {
       chartSaldo(applyFilter(rows, panelFilters.saldo));
       chartMensual(applyFilter(rows, panelFilters.mensual));
-      chartGastos(applyFilter(rows, panelFilters.gastos));
-      chartDonut(applyFilter(rows, panelFilters.gastos));
+      chartGastos(gastosRanking.ranking);
+      chartDonut(gastosRanking.donut);
     });
 
   } else {
@@ -1329,48 +1332,34 @@ function kpiCardsIbkrHtml(kpi) {
   `;
 }
 
-function monthKey(offset = 0) {
-  const d = new Date();
-  const start = new Date(d.getFullYear(), d.getMonth() + offset, 1);
-  return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function gastoSumForMonth(ym) {
-  return r2(data.filter(r => r.Tipo === 'Gasto' && r.Fecha.slice(0, 7) === ym)
-    .reduce((s, r) => s + (r.Total || 0), 0));
-}
-
-function gastoAlertHtml() {
-  const cur = monthKey(0);
-  const curTotal = gastoSumForMonth(cur);
-  const prev = [monthKey(-1), monthKey(-2), monthKey(-3)].map(gastoSumForMonth);
-  const withData = prev.filter(v => v > 0);
-  if (!withData.length || curTotal <= 0) return '';
-  const avg = r2(withData.reduce((a, b) => a + b, 0) / withData.length);
-  if (avg <= 0) return '';
-  const diff = r2(curTotal - avg);
-  const pct = r2((diff / avg) * 100);
-  if (diff <= 0) {
-    return `<div class="soft-alert ok">Gastos este mes ${eur(curTotal)} · ${Math.abs(pct).toFixed(0)}% por debajo de la media de los ${withData.length} meses anteriores (${eur(avg)})</div>`;
+function gastoAlertHtml(alert) {
+  if (!alert) return '';
+  if (!alert.isWarning) {
+    return `<div class="soft-alert ok">Gastos este mes ${eur(alert.curTotal)} · ${Math.abs(alert.pct).toFixed(0)}% por debajo de la media de los ${alert.monthsCount} meses anteriores (${eur(alert.avg)})</div>`;
   }
-  return `<div class="soft-alert warn">Gastos este mes ${eur(curTotal)} · ${pct.toFixed(0)}% por encima de la media de los ${withData.length} meses anteriores (${eur(avg)})</div>`;
+  return `<div class="soft-alert warn">Gastos este mes ${eur(alert.curTotal)} · ${alert.pct.toFixed(0)}% por encima de la media de los ${alert.monthsCount} meses anteriores (${eur(alert.avg)})</div>`;
 }
 
-function topMerchantsHtml() {
-  const cur = monthKey(0);
-  const by = {};
-  for (const r of data) {
-    if (r.Tipo !== 'Gasto' || r.Fecha.slice(0, 7) !== cur) continue;
-    by[r.Concepto] = (by[r.Concepto] || 0) + r.Total;
-  }
-  const top = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  if (!top.length) return '';
+function topMerchantsHtml(topMerchants) {
+  if (!topMerchants.length) return '';
   return `<div class="merchants-strip">
     <span class="mlabel">Top del mes</span>
-    ${top.map(([c, t]) =>
+    ${topMerchants.map(({ concepto: c, total: t }) =>
       `<button type="button" class="chip" title="${escAttr(c)}" data-c="${escAttr(c)}" onclick="filterByConcept(this.dataset.c)">${esc(c)} <span class="chip-n">${eur(t)}</span></button>`
     ).join('')}
   </div>`;
+}
+
+async function fetchGastosMesActual(cuenta) {
+  const res = await fetch(`/api/accounts/${cuenta}/gastos-mes-actual`);
+  return res.json();
+}
+
+async function fetchGastosRanking(cuenta, f, mode) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all', mode });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`/api/accounts/${cuenta}/gastos-ranking?${params}`);
+  return res.json();
 }
 
 // ─────────────────────────────────────────────
@@ -1451,50 +1440,13 @@ function chartMensual(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartGastos(rows) {
-  const gastos = rows.filter(r => r.Tipo === 'Gasto' && r.Total != null && !isNaN(r.Total));
-  if (!gastos.length) { Plotly.purge('c-gastos'); return; }
+function chartGastos(report) {
+  if (!report.hasGastos) { Plotly.purge('c-gastos'); return; }
+  if (!report.entries.length) return;
 
-  const byConcepto = {};
-  for (const r of gastos) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const gf = panelFilters.gastos;
-  let nMonths;
-  if (!gf || gf.type === 'all' || gf.type === 'year') {
-    nMonths = new Set(gastos.map(r => r.Fecha.slice(0, 7))).size || 1;
-  } else if (gf.type === '1m') {
-    nMonths = 1;
-  } else if (gf.type === '3m') {
-    nMonths = 3;
-  } else {
-    nMonths = 6;
-  }
-
-  let entries, hoverSuffix;
-  if (gastosMode === 'media') {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total / nMonths)])
-      .filter(([, avg]) => avg > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .reverse();
-    hoverSuffix = '€/mes';
-  } else {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total)])
-      .filter(([, t]) => t > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .reverse();
-    hoverSuffix = '€';
-  }
-
-  if (!entries.length) return;
-  const conceptos = entries.map(([c]) => c);
-  const valores   = entries.map(([, v]) => v);
+  const reversed = [...report.entries].reverse();
+  const conceptos = reversed.map(e => e.concepto);
+  const valores   = reversed.map(e => e.valor);
   const maxV = Math.max(...valores);
   const L = baseLayout();
 
@@ -1506,7 +1458,7 @@ function chartGastos(rows) {
     constraintext: 'none',
     customdata: conceptos,
     marker: { color: valores, colorscale: 'Teal', showscale: false },
-    hovertemplate: `%{customdata}: <b>%{x:,.2f}${hoverSuffix}</b><extra></extra>`
+    hovertemplate: `%{customdata}: <b>%{x:,.2f}${report.hoverSuffix}</b><extra></extra>`
   }], {
     ...L,
     hovermode: 'closest',
@@ -1518,27 +1470,11 @@ function chartGastos(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartDonut(rows) {
-  const gastos = rows.filter(r => r.Tipo === 'Gasto' && r.Total != null && !isNaN(r.Total));
-  if (!gastos.length) { Plotly.purge('c-donut'); return; }
+function chartDonut(report) {
+  if (!report.hasGastos) { Plotly.purge('c-donut'); return; }
 
-  const byConcepto = {};
-  for (const r of gastos) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const sorted = Object.entries(byConcepto)
-    .map(([c, t]) => [c, r2(t)])
-    .filter(([, t]) => t > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  const top    = sorted.slice(0, 14);
-  const rest   = sorted.slice(14).reduce((s, [, v]) => s + v, 0);
-  if (rest > 0) top.push(['Otros', r2(rest)]);
-
-  const labelsOrig = top.map(([c]) => c);
-  const values     = top.map(([, v]) => v);
+  const labelsOrig = report.labels;
+  const values     = report.values;
 
   Plotly.newPlot('c-donut', [{
     type: 'pie', hole: 0.48,

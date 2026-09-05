@@ -899,11 +899,6 @@ function applyFilter(rows, f) {
   return rows.filter(r => rowInFilter(r.Fecha, f));
 }
 
-function applyFilterByCloseDate(rows, f) {
-  if (!f || f.type === 'all') return rows;
-  return rows.filter(r => rowInFilter(r.fr, f));
-}
-
 function panelFilterBar(panel, allRows) {
   const c1m = calendarMonthStart(0);
   const c3m = calendarMonthStart(2);
@@ -974,7 +969,7 @@ async function refreshPanel(panel) {
     if (el) el.innerHTML = apuestasBody(await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas));
   } else if (panel === 'inversiones') {
     const el = document.getElementById('inversiones-body');
-    if (el) el.innerHTML = inversionesBody(filtered);
+    if (el) el.innerHTML = inversionesBody(await fetchRangeReport('/api/accounts/ibkr/carteras', panelFilters.inversiones));
   }
 }
 
@@ -1250,6 +1245,7 @@ async function render(acc, rows) {
 
   } else {
     const kpi = await fetchIbkrKpis(kpiType);
+    const inversionesHtml = await renderInversiones();
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ik')}
@@ -1292,7 +1288,7 @@ async function render(acc, rows) {
       </div>
 
       ${renderTransferencias(applyFilter(rows, panelFilters.transferencias))}
-      ${renderInversiones(applyFilter(rows, panelFilters.inversiones))}
+      ${inversionesHtml}
       ${renderBottomGrid(acc)}
     `;
     setToday('f-fecha');
@@ -1751,54 +1747,34 @@ async function renderApuestas() {
   </div>`;
 }
 
-function inversionesBody(_rows) {
-  // KPIs always from full data — same reasoning as apuestasBody.
-  const allInv          = data.filter(r => r.Tipo === 'Inversión');
-  const closedConceptsI = new Set(data.filter(r => r.Tipo === 'Inversión_r').map(r => r.Concepto));
-  const openInv         = allInv.filter(r => !closedConceptsI.has(r.Concepto));
-  const openGroupsI     = groupBy(openInv, 'Concepto');
-  const openCountI      = Object.keys(openGroupsI).length;
-  const openTotalI      = r2(Object.values(openGroupsI).reduce((s, rs) => s + sumC(rs), 0));
-
-  const allClosedInv = computeInversiones(data);
-  const totalInv     = r2(sumC(allInv));
-  const lastClosed   = allClosedInv.length ? allClosedInv.at(-1) : null;
-  const totalPnL     = lastClosed ? lastClosed.balH : 0;
-  const totalRoi     = lastClosed ? lastClosed.roiH : 0;
-
-  if (!openCountI && !allClosedInv.length) return '<div class="empty">No hay carteras registradas todavía.</div>';
-
-  // Filter by close date for table display only
-  const closedInv = applyFilterByCloseDate(allClosedInv, panelFilters.inversiones);
+function inversionesBody(report) {
+  if (!report.openCount && !report.closedCount) return '<div class="empty">No hay carteras registradas todavía.</div>';
 
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Total en carteras</div>
-      <div class="section-kpi-value">${eur(totalInv)}</div>
-      <div class="section-kpi-sub">${allClosedInv.length + openCountI} cartera${(allClosedInv.length + openCountI) !== 1 ? 's' : ''}</div>
+      <div class="section-kpi-value">${eur(report.totalInv)}</div>
+      <div class="section-kpi-sub">${report.totalCarteras} cartera${report.totalCarteras !== 1 ? 's' : ''}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">P&amp;L neto</div>
-      <div class="section-kpi-value ${totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(totalPnL)}</div>
+      <div class="section-kpi-value ${report.totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.totalPnL)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">ROI total</div>
-      <div class="section-kpi-value ${allClosedInv.length ? (totalRoi >= 0 ? 'num-pos' : 'num-neg') : ''}">${allClosedInv.length ? totalRoi.toFixed(2) + '%' : '—'}</div>
-      ${allClosedInv.length ? `<div class="section-kpi-sub">${allClosedInv.length} cerrada${allClosedInv.length !== 1 ? 's' : ''}</div>` : ''}
+      <div class="section-kpi-value ${report.closedCount ? (report.totalRoi >= 0 ? 'num-pos' : 'num-neg') : ''}">${report.closedCount ? report.totalRoi.toFixed(2) + '%' : '—'}</div>
+      ${report.closedCount ? `<div class="section-kpi-sub">${report.closedCount} cerrada${report.closedCount !== 1 ? 's' : ''}</div>` : ''}
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Abiertas ahora</div>
-      <div class="section-kpi-value" style="${openCountI ? 'color:var(--accent)' : ''}">${openCountI ? openCountI + ' cart.' : '—'}</div>
-      ${openCountI ? `<div class="section-kpi-sub">${eur(openTotalI)}</div>` : ''}
+      <div class="section-kpi-value" style="${report.openCount ? 'color:var(--accent)' : ''}">${report.openCount ? report.openCount + ' cart.' : '—'}</div>
+      ${report.openCount ? `<div class="section-kpi-sub">${eur(report.openTotal)}</div>` : ''}
     </div>
   </div>`;
 
   let openHtml = '';
-  if (openCountI > 0) {
-    const positions = Object.entries(openGroupsI)
-      .map(([c, rs]) => ({ concepto: c, fi: minD(rs), invertido: r2(sumC(rs)) }))
-      .sort((a, b) => b.invertido - a.invertido || b.fi.localeCompare(a.fi));
-    const tbody = positions.map(p => `<tr>
+  if (report.openCount > 0) {
+    const tbody = report.openPositions.map(p => `<tr>
       <td><b>${esc(p.concepto)}</b></td>
       <td class="nowrap" style="color:var(--muted)">${fd(p.fi)}</td>
       <td class="r">${eur(p.invertido)}</td>
@@ -1806,7 +1782,7 @@ function inversionesBody(_rows) {
         onclick="openCloseModal(this)" data-tipo="Inversión" data-concepto="${escAttr(p.concepto)}" data-monto="${p.invertido}">Cerrar</button></td>
     </tr>`).join('');
     openHtml = `<div style="border-bottom:1px solid var(--border)">
-      <div class="open-pos-header">● Carteras abiertas · ${openCountI}</div>
+      <div class="open-pos-header">● Carteras abiertas · ${report.openCount}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Cartera</th><th>Inicio</th><th class="r">Capital</th><th class="r">Acción</th></tr></thead>
         <tbody>${tbody}</tbody>
@@ -1815,8 +1791,8 @@ function inversionesBody(_rows) {
   }
 
   let closedHtml = '';
-  if (closedInv.length > 0) {
-    const tbody = closedInv.map(r => `<tr>
+  if (report.closedPositions.length > 0) {
+    const tbody = report.closedPositions.map(r => `<tr>
       <td class="nowrap">${esc(r.Concepto)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fi)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fr)}</td>
@@ -1828,7 +1804,7 @@ function inversionesBody(_rows) {
       <td class="r ${r.roiH >= 0 ? 'num-pos' : 'num-neg'}">${r.roiH.toFixed(2)}%</td>
     </tr>`).join('');
     closedHtml = `<div>
-      <div class="closed-pos-header">Historial de carteras · ${closedInv.length}</div>
+      <div class="closed-pos-header">Historial de carteras · ${report.closedPositions.length}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr>
           <th>Cartera</th><th>Inicio</th><th>Cierre</th>
@@ -1842,13 +1818,14 @@ function inversionesBody(_rows) {
   return kpisHtml + openHtml + closedHtml;
 }
 
-function renderInversiones(rows) {
+async function renderInversiones() {
+  const report = await fetchRangeReport('/api/accounts/ibkr/carteras', panelFilters.inversiones);
   return `<div class="section" style="margin-bottom:14px">
     <div class="section-head">
       <span class="section-title">Análisis de carteras</span>
       <div style="display:flex;gap:4px" id="pf-inversiones">${panelFilterBar('inversiones', data)}</div>
     </div>
-    <div id="inversiones-body">${inversionesBody(rows)}</div>
+    <div id="inversiones-body">${inversionesBody(report)}</div>
   </div>`;
 }
 
@@ -1905,30 +1882,6 @@ function renderTransferencias(rows) {
     </div>
     <div id="transferencias-body">${transferenciasBody(rows)}</div>
   </div>`;
-}
-
-function computeInversiones(rows) {
-  const groups = groupBy(rows.filter(r => r.Tipo === 'Inversión' || r.Tipo === 'Inversión_r'), 'Concepto');
-  const out = [];
-  for (const [c, rs] of Object.entries(groups)) {
-    const inv      = rs.filter(r => r.Tipo === 'Inversión');
-    const retornos = rs.filter(r => r.Tipo === 'Inversión_r');
-    if (!retornos.length) continue;
-    const invertido = sumC(inv);
-    const devuelto  = sumC(retornos);
-    const bal       = r2(devuelto - invertido);
-    const roi       = invertido > 0 ? r2(bal / invertido * 100) : 0;
-    out.push({ Concepto: c, fi: minD(inv), fr: maxD(retornos), invertido: r2(invertido), devuelto: r2(devuelto), bal, roi });
-  }
-  out.sort((a, b) => a.fr.localeCompare(b.fr));
-  let bH = 0, iAcum = 0;
-  for (const r of out) {
-    bH    = r2(bH + r.bal);
-    iAcum = r2(iAcum + r.invertido);
-    r.balH = bH;
-    r.roiH = iAcum > 0 ? r2(bH / iAcum * 100) : 0;
-  }
-  return out;
 }
 
 // ─────────────────────────────────────────────
@@ -2340,13 +2293,6 @@ const r2       = v => Math.round(v * 100) / 100;
 const fd       = s => { if (!s) return '—'; const [y, mo, d] = s.replace('T', ' ').split(' ')[0].split('-').map(Number); return new Date(y, mo - 1, d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
 const escAttr  = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const esc      = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-function groupBy(arr, key) {
-  return arr.reduce((acc, r) => { (acc[r[key]] = acc[r[key]] || []).push(r); return acc; }, {});
-}
-const sumC  = arr => arr.reduce((s, r) => s + (r.Total || 0), 0);
-const minD  = arr => arr.reduce((m, r) => !m || r.Fecha < m ? r.Fecha : m, null) || '';
-const maxD  = arr => arr.reduce((m, r) => !m || r.Fecha > m ? r.Fecha : m, null) || '';
 
 function localISODate() {
   const d = new Date();

@@ -86,13 +86,14 @@ def compute_closed_positions(movements: list[Movement], open_type: str, close_ty
 
 
 def compute_open_positions(movements: list[Movement], open_type: str, close_type: str) -> list[OpenPosition]:
+    """Sin ordenar -- apuestas e inversiones ordenan sus posiciones abiertas
+    con criterios distintos (ver GetBettingReportUseCase/GetPortfolioReportUseCase),
+    igual que ya hacían apuestasBody/inversionesBody en index.html."""
     abiertos = [m for m in movements if m.type == open_type]
     closed_concepts = {m.concept for m in movements if m.type == close_type}
     open_movs = [m for m in abiertos if m.concept not in closed_concepts]
     groups = _group_by_concept(open_movs)
-    positions = [
+    return [
         OpenPosition(concepto=c, fi=_min_fecha(rs), monto=_r2(_sum_amount(rs)))
         for c, rs in groups.items()
     ]
-    positions.sort(key=lambda p: p.fi, reverse=True)
-    return positions

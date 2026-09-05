@@ -479,6 +479,46 @@
     "ibkr": 1305.0,
     "openbank": 8720.0
   },
+  "ibkr_carteras_report_3m": {
+    "closedCount": 2,
+    "closedPositions": [
+      {
+        "Concepto": "Cartera Tech",
+        "bal": 100.0,
+        "balH": 100.0,
+        "devuelto": 400.0,
+        "fi": "2026-01-10 09:00:00",
+        "fr": "2026-05-10 09:00:00",
+        "invertido": 300.0,
+        "roi": 33.33,
+        "roiH": 33.33
+      },
+      {
+        "Concepto": "Cartera Bonos",
+        "bal": -50.0,
+        "balH": 50.0,
+        "devuelto": 150.0,
+        "fi": "2026-02-05 09:00:00",
+        "fr": "2026-06-08 09:00:00",
+        "invertido": 200.0,
+        "roi": -25.0,
+        "roiH": 10.0
+      }
+    ],
+    "openCount": 1,
+    "openPositions": [
+      {
+        "concepto": "Cartera Global",
+        "fi": "2026-04-12 09:00:00",
+        "invertido": 250.0
+      }
+    ],
+    "openTotal": 250.0,
+    "totalCarteras": 3,
+    "totalInv": 750.0,
+    "totalPnL": 50.0,
+    "totalRoi": 10.0
+  },
   "ibkr_kpis_by_period": {
     "año": {
       "aportado": 400.0,

@@ -100,6 +100,10 @@ def run_scenario(repo_root):
                 period: client.get(f"/api/accounts/ibkr/ibkr-kpis?period={period}").json()
                 for period in ("mes", "trimestre", "año")
             }
+            # panelFilters.inversiones por defecto en index.html es {type: '3m'}.
+            result["ibkr_carteras_report_3m"] = client.get(
+                "/api/accounts/ibkr/carteras?range=3m"
+            ).json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []

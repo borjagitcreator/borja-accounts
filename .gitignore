@@ -9,3 +9,18 @@ venv/
 # Datos financieros personales — NO subir al repo (los .example sí se versionan)
 openbank.csv
 ibkr.csv
+borja_accounts.db
+
+# Client Portal Gateway de IBKR — binario propietario redistribuible (~10MB),
+# incluye keystore (root/vertx.jks) y contraseña en claro en conf.yaml.
+# Se descarga aparte: http://download2.interactivebrokers.com/portal/clientportal.gw.zip
+clientportal.gw.zip
+clientportal.gw/
+.pytest_cache/
+
+# Build de producción del frontend (Bloque 5) -- generado con
+# `npm run build` en frontend/, servido por app/main.py (GET /). CI lo
+# construye antes de correr pytest (ver .github/workflows/ci.yml);
+# node_modules ya está cubierto por frontend/.gitignore, pero dist/ se
+# repite aquí para que no dependa de conocer el gitignore anidado.
+frontend/dist/

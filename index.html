@@ -842,7 +842,7 @@ async function loadAccount(acc) {
   try {
     const res = await fetch(`/api/data/${acc}`);
     data = await res.json();
-    render(acc, data);
+    await render(acc, data);
   } catch {
     document.getElementById('main').innerHTML = '<div class="loading">Error al cargar los datos.</div>';
   }
@@ -870,38 +870,6 @@ function calendarMonthStart(monthsBack) {
   const y = start.getFullYear();
   const m = String(start.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}-01`;
-}
-
-function monthsBackForFilter(type) {
-  if (type === '1m') return 0;
-  if (type === '3m') return 2;
-  if (type === '6m') return 5;
-  return null;
-}
-
-function filterCutoff(f) {
-  if (!f || f.type === 'all') return null;
-  if (f.type === 'year') return { mode: 'year', year: String(f.year) };
-  const back = monthsBackForFilter(f.type);
-  if (back == null) return null;
-  return { mode: 'from', cutoff: calendarMonthStart(back) };
-}
-
-function rowInFilter(fecha, f) {
-  const c = filterCutoff(f);
-  if (!c) return true;
-  if (c.mode === 'year') return fecha.startsWith(c.year);
-  return fecha >= c.cutoff;
-}
-
-function applyFilter(rows, f) {
-  if (!f || f.type === 'all') return rows;
-  return rows.filter(r => rowInFilter(r.Fecha, f));
-}
-
-function applyFilterByCloseDate(rows, f) {
-  if (!f || f.type === 'all') return rows;
-  return rows.filter(r => rowInFilter(r.fr, f));
 }
 
 function panelFilterBar(panel, allRows) {
@@ -936,45 +904,45 @@ function setPanelFilter(panel, type, year) {
   refreshPanel(panel);
 }
 
-function setGastosMode(mode) {
+async function setGastosMode(mode) {
   gastosMode = mode;
   document.querySelectorAll('.gastos-mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  chartGastos(applyFilter(data, panelFilters.gastos));
+  chartGastos((await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode)).ranking);
 }
 
-function setCarterasMode(mode) {
+async function setCarterasMode(mode) {
   carterasMode = mode;
   document.querySelectorAll('.carteras-mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  chartCarteras(applyFilter(data, panelFilters.carteras));
+  chartCarteras(await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode));
 }
 
-function refreshPanel(panel) {
-  const filtered = applyFilter(data, panelFilters[panel]);
+async function refreshPanel(panel) {
   const pfEl = document.getElementById(`pf-${panel}`);
   if (pfEl) pfEl.innerHTML = panelFilterBar(panel, data);
 
   if (panel === 'saldo') {
-    chartSaldo(filtered);
+    chartSaldo(await fetchRangeReport(`/api/accounts/${account}/saldo-evolucion`, panelFilters.saldo));
   } else if (panel === 'mensual') {
-    chartMensual(filtered);
+    chartMensual(await fetchRangeReport('/api/accounts/openbank/mensual-evolucion', panelFilters.mensual));
   } else if (panel === 'gastos') {
-    chartGastos(filtered);
-    chartDonut(filtered);
+    const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
+    chartGastos(gastosRanking.ranking);
+    chartDonut(gastosRanking.donut);
   } else if (panel === 'carteras') {
-    chartCarteras(filtered);
+    chartCarteras(await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode));
   } else if (panel === 'transferencias') {
     const el = document.getElementById('transferencias-body');
-    if (el) el.innerHTML = transferenciasBody(filtered);
+    if (el) el.innerHTML = transferenciasBody(await fetchRangeReport('/api/accounts/ibkr/transferencias', panelFilters.transferencias));
   } else if (panel === 'apuestas') {
     const el = document.getElementById('apuestas-body');
-    if (el) el.innerHTML = apuestasBody(filtered);
+    if (el) el.innerHTML = apuestasBody(await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas));
   } else if (panel === 'inversiones') {
     const el = document.getElementById('inversiones-body');
-    if (el) el.innerHTML = inversionesBody(filtered);
+    if (el) el.innerHTML = inversionesBody(await fetchRangeReport('/api/accounts/ibkr/carteras', panelFilters.inversiones));
   }
 }
 
@@ -1066,15 +1034,32 @@ function kpiCardsHtml(kpi) {
   `;
 }
 
-function setKpiFilter(type) {
+async function fetchAccountKpis(cuenta, period) {
+  const res = await fetch(`/api/accounts/${cuenta}/kpis?period=${encodeURIComponent(period)}`);
+  return res.json();
+}
+
+async function fetchIbkrKpis(period) {
+  const res = await fetch(`/api/accounts/ibkr/ibkr-kpis?period=${encodeURIComponent(period)}`);
+  return res.json();
+}
+
+async function fetchRangeReport(path, f) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all' });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`${path}?${params}`);
+  return res.json();
+}
+
+async function setKpiFilter(type) {
   panelFilters.kpi = { type };
   document.querySelectorAll('.kpi-period-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.kpi === type);
   });
   const el = document.getElementById('kpi-cards');
   if (!el) return;
-  if (account === 'ibkr') el.innerHTML = kpiCardsIbkrHtml(computeIbkrKPIs(data));
-  else el.innerHTML = kpiCardsHtml(computeKPIs(data));
+  if (account === 'ibkr') el.innerHTML = kpiCardsIbkrHtml(await fetchIbkrKpis(type));
+  else el.innerHTML = kpiCardsHtml(await fetchAccountKpis('openbank', type));
 }
 
 function markSvg(kind, sizeClass = '') {
@@ -1152,13 +1137,18 @@ function renderBottomGrid(acc) {
 // ─────────────────────────────────────────────
 // RENDER
 // ─────────────────────────────────────────────
-function render(acc, rows) {
+async function render(acc, rows) {
   const isOB = acc === 'openbank';
   movSearch = { tipo: '', concepto: '', fecha: '' };
   const kpiType = panelFilters.kpi.type;
 
   if (isOB) {
-    const kpi = computeKPIs(rows);
+    const kpi = await fetchAccountKpis('openbank', kpiType);
+    const apuestasHtml = await renderApuestas();
+    const gastosMesActual = await fetchGastosMesActual('openbank');
+    const gastosRanking = await fetchGastosRanking('openbank', panelFilters.gastos, gastosMode);
+    const saldoReport = await fetchRangeReport('/api/accounts/openbank/saldo-evolucion', panelFilters.saldo);
+    const mensualReport = await fetchRangeReport('/api/accounts/openbank/mensual-evolucion', panelFilters.mensual);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ob')}
@@ -1176,7 +1166,7 @@ function render(acc, rows) {
       <div class="kpis" id="kpi-cards">
         ${kpiCardsHtml(kpi)}
       </div>
-      ${gastoAlertHtml()}
+      ${gastoAlertHtml(gastosMesActual.alert)}
 
       <div class="charts-grid">
         <div class="chart-card">
@@ -1214,24 +1204,28 @@ function render(acc, rows) {
               <div id="c-donut" style="height:480px"></div>
             </div>
           </div>
-          <div id="merchants-strip">${topMerchantsHtml()}</div>
+          <div id="merchants-strip">${topMerchantsHtml(gastosMesActual.topMerchants)}</div>
         </div>
       </div>
 
-      ${renderApuestas(applyFilter(rows, panelFilters.apuestas))}
+      ${apuestasHtml}
       ${renderBottomGrid(acc)}
     `;
     setToday('f-fecha');
     onTipoChange();
     requestAnimationFrame(() => {
-      chartSaldo(applyFilter(rows, panelFilters.saldo));
-      chartMensual(applyFilter(rows, panelFilters.mensual));
-      chartGastos(applyFilter(rows, panelFilters.gastos));
-      chartDonut(applyFilter(rows, panelFilters.gastos));
+      chartSaldo(saldoReport);
+      chartMensual(mensualReport);
+      chartGastos(gastosRanking.ranking);
+      chartDonut(gastosRanking.donut);
     });
 
   } else {
-    const kpi = computeIbkrKPIs(rows);
+    const kpi = await fetchIbkrKpis(kpiType);
+    const inversionesHtml = await renderInversiones();
+    const transferenciasHtml = await renderTransferencias();
+    const saldoReport = await fetchRangeReport('/api/accounts/ibkr/saldo-evolucion', panelFilters.saldo);
+    const carterasReport = await fetchCarterasRanking('ibkr', panelFilters.carteras, carterasMode);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ik')}
@@ -1273,15 +1267,15 @@ function render(acc, rows) {
         </div>
       </div>
 
-      ${renderTransferencias(applyFilter(rows, panelFilters.transferencias))}
-      ${renderInversiones(applyFilter(rows, panelFilters.inversiones))}
+      ${transferenciasHtml}
+      ${inversionesHtml}
       ${renderBottomGrid(acc)}
     `;
     setToday('f-fecha');
     onTipoChange();
     requestAnimationFrame(() => {
-      chartSaldo(applyFilter(rows, panelFilters.saldo));
-      chartCarteras(applyFilter(rows, panelFilters.carteras));
+      chartSaldo(saldoReport);
+      chartCarteras(carterasReport);
     });
   }
 }
@@ -1289,149 +1283,6 @@ function render(acc, rows) {
 // ─────────────────────────────────────────────
 // KPIs
 // ─────────────────────────────────────────────
-function computeKPIs(allRows) {
-  const sorted = [...allRows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const saldo  = sorted.length ? sorted.at(-1).Saldo : 0;
-  const kpiType = panelFilters.kpi.type;
-
-  const TIPOS_KPI_ING = new Set(['Nómina', 'Ingreso', 'Devolución']);
-  const TIPOS_KPI_GAS = new Set(['Gasto', 'Transferencia']);
-  const sum = rs => {
-    let ing = 0, gas = 0, balIng = 0, balGas = 0;
-    for (const r of rs) {
-      if (TIPOS_KPI_ING.has(r.Tipo)) ing += r.Total;
-      if (TIPOS_KPI_GAS.has(r.Tipo)) gas += r.Total;
-      if (TIPOS_INGRESO.has(r.Tipo) && r.Tipo !== 'Saldo Inicial') balIng += r.Total;
-      else if (TIPOS_NEGATIVOS.has(r.Tipo)) balGas += r.Total;
-    }
-    return { ingresos: r2(ing), gastos: r2(gas), balance: r2(balIng - balGas) };
-  };
-
-  let curr, prv;
-  if (kpiType === 'trimestre') {
-    // Últimos 3 meses de calendario (ej. abr+may+jun) vs los 3 anteriores
-    const cut  = calendarMonthStart(2);
-    const cut2 = calendarMonthStart(5);
-    curr = sum(allRows.filter(r => r.Fecha >= cut));
-    prv  = sum(allRows.filter(r => r.Fecha >= cut2 && r.Fecha < cut));
-  } else if (kpiType === 'año') {
-    const y  = new Date().getFullYear().toString();
-    const py = (new Date().getFullYear() - 1).toString();
-    curr = sum(allRows.filter(r => r.Fecha.startsWith(y)));
-    prv  = sum(allRows.filter(r => r.Fecha.startsWith(py)));
-  } else {
-    const m  = new Date().toISOString().slice(0, 7);
-    const _d = new Date();
-    const pm = new Date(_d.getFullYear(), _d.getMonth() - 1, 1).toISOString().slice(0, 7);
-    curr = sum(allRows.filter(r => r.Fecha.slice(0, 7) === m));
-    prv  = sum(allRows.filter(r => r.Fecha.slice(0, 7) === pm));
-  }
-
-  const mk = (c, p) => ({ diff: r2(c - p) });
-  return {
-    saldo,
-    ingresos: curr.ingresos, ingresosDelta: mk(curr.ingresos, prv.ingresos),
-    gastos:   curr.gastos,   gastosDelta:   mk(curr.gastos,   prv.gastos),
-    balance:  curr.balance,  balanceDelta:  mk(curr.balance,  prv.balance),
-  };
-}
-
-function periodSlices(kpiType) {
-  if (kpiType === 'trimestre') {
-    const cut  = calendarMonthStart(2);
-    const cut2 = calendarMonthStart(5);
-    return {
-      inCurr: r => r.Fecha >= cut,
-      inPrv:  r => r.Fecha >= cut2 && r.Fecha < cut,
-      inCurrFr: r => r.fr >= cut,
-      inPrvFr:  r => r.fr >= cut2 && r.fr < cut,
-    };
-  }
-  if (kpiType === 'año') {
-    const y  = new Date().getFullYear().toString();
-    const py = (new Date().getFullYear() - 1).toString();
-    return {
-      inCurr: r => r.Fecha.startsWith(y),
-      inPrv:  r => r.Fecha.startsWith(py),
-      inCurrFr: r => r.fr.startsWith(y),
-      inPrvFr:  r => r.fr.startsWith(py),
-    };
-  }
-  const m  = new Date().toISOString().slice(0, 7);
-  const _d = new Date();
-  const pm = new Date(_d.getFullYear(), _d.getMonth() - 1, 1).toISOString().slice(0, 7);
-  return {
-    inCurr: r => r.Fecha.slice(0, 7) === m,
-    inPrv:  r => r.Fecha.slice(0, 7) === pm,
-    inCurrFr: r => r.fr.slice(0, 7) === m,
-    inPrvFr:  r => r.fr.slice(0, 7) === pm,
-  };
-}
-
-function isTransferIn(r) {
-  if (r.Tipo !== 'Ingreso') return false;
-  const c = (r.Concepto || '').toLowerCase();
-  return c.includes('desde openbank') || c.includes('desde ob');
-}
-
-function isTransferOut(r) {
-  if (r.Tipo === 'Transferencia') return true;
-  const c = (r.Concepto || '').toLowerCase();
-  return c.includes('a openbank') || c.includes('a ob');
-}
-
-function ibkrTransfers(rows) {
-  return rows
-    .filter(r => isTransferIn(r) || isTransferOut(r))
-    .map(r => ({
-      ...r,
-      dir: isTransferIn(r) ? 'in' : 'out',
-      label: isTransferIn(r) ? '← Openbank' : '→ Openbank',
-    }))
-    .sort((a, b) => b.Fecha.localeCompare(a.Fecha));
-}
-
-function openCarterasSnapshot(allRows) {
-  const allInv = allRows.filter(r => r.Tipo === 'Inversión');
-  const closed = new Set(allRows.filter(r => r.Tipo === 'Inversión_r').map(r => r.Concepto));
-  const open = allInv.filter(r => !closed.has(r.Concepto));
-  const groups = groupBy(open, 'Concepto');
-  const count = Object.keys(groups).length;
-  const total = r2(Object.values(groups).reduce((s, rs) => s + sumC(rs), 0));
-  return { count, total };
-}
-
-function computeIbkrKPIs(allRows) {
-  const sorted = [...allRows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const saldo  = sorted.length ? sorted.at(-1).Saldo : 0;
-  const slices = periodSlices(panelFilters.kpi.type);
-  const open   = openCarterasSnapshot(allRows);
-
-  const aportado = rs => {
-    let rec = 0, sent = 0;
-    for (const r of rs) {
-      if (isTransferIn(r)) rec += r.Total;
-      else if (isTransferOut(r)) sent += r.Total;
-    }
-    return r2(rec - sent);
-  };
-  const currA = aportado(allRows.filter(slices.inCurr));
-  const prvA  = aportado(allRows.filter(slices.inPrv));
-
-  const closed = computeInversiones(allRows);
-  const pnl = list => r2(list.reduce((s, r) => s + r.bal, 0));
-  const currP = pnl(closed.filter(slices.inCurrFr));
-  const prvP  = pnl(closed.filter(slices.inPrvFr));
-
-  const mk = (c, p) => ({ diff: r2(c - p) });
-  return {
-    saldo,
-    aportado: currA, aportadoDelta: mk(currA, prvA),
-    enCarteras: open.total, enCarterasCount: open.count,
-    pnl: currP, pnlDelta: mk(currP, prvP),
-  };
-}
-
 function kpiCardsIbkrHtml(kpi) {
   const lbl = kpiLabel();
   return `
@@ -1457,57 +1308,48 @@ function kpiCardsIbkrHtml(kpi) {
   `;
 }
 
-function monthKey(offset = 0) {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + offset, 1).toISOString().slice(0, 7);
-}
-
-function gastoSumForMonth(ym) {
-  return r2(data.filter(r => r.Tipo === 'Gasto' && r.Fecha.slice(0, 7) === ym)
-    .reduce((s, r) => s + (r.Total || 0), 0));
-}
-
-function gastoAlertHtml() {
-  const cur = monthKey(0);
-  const curTotal = gastoSumForMonth(cur);
-  const prev = [monthKey(-1), monthKey(-2), monthKey(-3)].map(gastoSumForMonth);
-  const withData = prev.filter(v => v > 0);
-  if (!withData.length || curTotal <= 0) return '';
-  const avg = r2(withData.reduce((a, b) => a + b, 0) / withData.length);
-  if (avg <= 0) return '';
-  const diff = r2(curTotal - avg);
-  const pct = r2((diff / avg) * 100);
-  if (diff <= 0) {
-    return `<div class="soft-alert ok">Gastos este mes ${eur(curTotal)} · ${Math.abs(pct).toFixed(0)}% por debajo de la media de los ${withData.length} meses anteriores (${eur(avg)})</div>`;
+function gastoAlertHtml(alert) {
+  if (!alert) return '';
+  if (!alert.isWarning) {
+    return `<div class="soft-alert ok">Gastos este mes ${eur(alert.curTotal)} · ${Math.abs(alert.pct).toFixed(0)}% por debajo de la media de los ${alert.monthsCount} meses anteriores (${eur(alert.avg)})</div>`;
   }
-  return `<div class="soft-alert warn">Gastos este mes ${eur(curTotal)} · ${pct.toFixed(0)}% por encima de la media de los ${withData.length} meses anteriores (${eur(avg)})</div>`;
+  return `<div class="soft-alert warn">Gastos este mes ${eur(alert.curTotal)} · ${alert.pct.toFixed(0)}% por encima de la media de los ${alert.monthsCount} meses anteriores (${eur(alert.avg)})</div>`;
 }
 
-function topMerchantsHtml() {
-  const cur = monthKey(0);
-  const by = {};
-  for (const r of data) {
-    if (r.Tipo !== 'Gasto' || r.Fecha.slice(0, 7) !== cur) continue;
-    by[r.Concepto] = (by[r.Concepto] || 0) + r.Total;
-  }
-  const top = Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  if (!top.length) return '';
+function topMerchantsHtml(topMerchants) {
+  if (!topMerchants.length) return '';
   return `<div class="merchants-strip">
     <span class="mlabel">Top del mes</span>
-    ${top.map(([c, t]) =>
+    ${topMerchants.map(({ concepto: c, total: t }) =>
       `<button type="button" class="chip" title="${escAttr(c)}" data-c="${escAttr(c)}" onclick="filterByConcept(this.dataset.c)">${esc(c)} <span class="chip-n">${eur(t)}</span></button>`
     ).join('')}
   </div>`;
 }
 
+async function fetchGastosMesActual(cuenta) {
+  const res = await fetch(`/api/accounts/${cuenta}/gastos-mes-actual`);
+  return res.json();
+}
+
+async function fetchGastosRanking(cuenta, f, mode) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all', mode });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`/api/accounts/${cuenta}/gastos-ranking?${params}`);
+  return res.json();
+}
+
+async function fetchCarterasRanking(cuenta, f, mode) {
+  const params = new URLSearchParams({ range: (f && f.type) || 'all', mode });
+  if (f && f.year !== undefined) params.set('year', f.year);
+  const res = await fetch(`/api/accounts/${cuenta}/carteras-ranking?${params}`);
+  return res.json();
+}
+
 // ─────────────────────────────────────────────
 // CHARTS
 // ─────────────────────────────────────────────
-function chartSaldo(rows) {
-  const sorted = [...rows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const dates  = sorted.map(r => r.Fecha);
-  const saldos = sorted.map(r => r.Saldo);
-  const actual = saldos.at(-1) || 0;
+function chartSaldo(report) {
+  const { dates, saldos, actual, mediaMovil } = report;
   const L = baseLayout();
   const lineColor = account === 'ibkr' ? '#2F5D50' : '#0969da';
 
@@ -1518,11 +1360,9 @@ function chartSaldo(rows) {
     hovertemplate: '%{x|%d/%m/%y}: <b>%{y:,.2f}€</b><extra></extra>'
   }];
 
-  // Media móvil solo en Openbank (cuenta activa); en IBKR sobra
-  if (account !== 'ibkr') {
-    const media = rollingMean(saldos, dates, 30);
+  if (mediaMovil) {
     traces.push({
-      x: dates, y: media, type: 'scatter', mode: 'lines',
+      x: dates, y: mediaMovil, type: 'scatter', mode: 'lines',
       name: 'Media 30d',
       line: { color: '#cf222e', width: 1.5, dash: 'dash' },
       opacity: 0.7,
@@ -1537,18 +1377,11 @@ function chartSaldo(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartMensual(rows) {
-  const byMes = {};
-  for (const r of rows) {
-    const m = r.Fecha.slice(0, 7);
-    if (!byMes[m]) byMes[m] = { ing: 0, gas: 0 };
-    if (TIPOS_INGRESO.has(r.Tipo) && r.Tipo !== 'Saldo Inicial') byMes[m].ing += r.Total;
-    else if (TIPOS_NEGATIVOS.has(r.Tipo)) byMes[m].gas += r.Total;
-  }
-  const meses = Object.keys(byMes).sort();
-  const ing   = meses.map(m => r2(byMes[m].ing));
-  const gas   = meses.map(m => r2(byMes[m].gas));
-  const bal   = meses.map((_, i) => r2(ing[i] - gas[i]));
+function chartMensual(report) {
+  const meses = report.meses;
+  const ing   = report.ingresos;
+  const gas   = report.gastos;
+  const bal   = report.balance;
   const L = baseLayout();
 
   Plotly.newPlot('c-mensual', [
@@ -1578,50 +1411,13 @@ function chartMensual(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartGastos(rows) {
-  const gastos = rows.filter(r => r.Tipo === 'Gasto' && r.Total != null && !isNaN(r.Total));
-  if (!gastos.length) { Plotly.purge('c-gastos'); return; }
+function chartGastos(report) {
+  if (!report.hasGastos) { Plotly.purge('c-gastos'); return; }
+  if (!report.entries.length) return;
 
-  const byConcepto = {};
-  for (const r of gastos) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const gf = panelFilters.gastos;
-  let nMonths;
-  if (!gf || gf.type === 'all' || gf.type === 'year') {
-    nMonths = new Set(gastos.map(r => r.Fecha.slice(0, 7))).size || 1;
-  } else if (gf.type === '1m') {
-    nMonths = 1;
-  } else if (gf.type === '3m') {
-    nMonths = 3;
-  } else {
-    nMonths = 6;
-  }
-
-  let entries, hoverSuffix;
-  if (gastosMode === 'media') {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total / nMonths)])
-      .filter(([, avg]) => avg > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .reverse();
-    hoverSuffix = '€/mes';
-  } else {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total)])
-      .filter(([, t]) => t > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .reverse();
-    hoverSuffix = '€';
-  }
-
-  if (!entries.length) return;
-  const conceptos = entries.map(([c]) => c);
-  const valores   = entries.map(([, v]) => v);
+  const reversed = [...report.entries].reverse();
+  const conceptos = reversed.map(e => e.concepto);
+  const valores   = reversed.map(e => e.valor);
   const maxV = Math.max(...valores);
   const L = baseLayout();
 
@@ -1633,7 +1429,7 @@ function chartGastos(rows) {
     constraintext: 'none',
     customdata: conceptos,
     marker: { color: valores, colorscale: 'Teal', showscale: false },
-    hovertemplate: `%{customdata}: <b>%{x:,.2f}${hoverSuffix}</b><extra></extra>`
+    hovertemplate: `%{customdata}: <b>%{x:,.2f}${report.hoverSuffix}</b><extra></extra>`
   }], {
     ...L,
     hovermode: 'closest',
@@ -1645,27 +1441,11 @@ function chartGastos(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartDonut(rows) {
-  const gastos = rows.filter(r => r.Tipo === 'Gasto' && r.Total != null && !isNaN(r.Total));
-  if (!gastos.length) { Plotly.purge('c-donut'); return; }
+function chartDonut(report) {
+  if (!report.hasGastos) { Plotly.purge('c-donut'); return; }
 
-  const byConcepto = {};
-  for (const r of gastos) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const sorted = Object.entries(byConcepto)
-    .map(([c, t]) => [c, r2(t)])
-    .filter(([, t]) => t > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  const top    = sorted.slice(0, 14);
-  const rest   = sorted.slice(14).reduce((s, [, v]) => s + v, 0);
-  if (rest > 0) top.push(['Otros', r2(rest)]);
-
-  const labelsOrig = top.map(([c]) => c);
-  const values     = top.map(([, v]) => v);
+  const labelsOrig = report.labels;
+  const values     = report.values;
 
   Plotly.newPlot('c-donut', [{
     type: 'pie', hole: 0.48,
@@ -1686,52 +1466,16 @@ function chartDonut(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function chartCarteras(rows) {
-  const invs = rows.filter(r => r.Tipo === 'Inversión' && r.Total != null && !isNaN(r.Total));
+function chartCarteras(report) {
   const el = document.getElementById('c-carteras');
   if (!el) return;
-  if (!invs.length) { Plotly.purge('c-carteras'); return; }
 
-  const byConcepto = {};
-  for (const r of invs) {
-    if (!byConcepto[r.Concepto]) byConcepto[r.Concepto] = 0;
-    byConcepto[r.Concepto] += r.Total;
-  }
-
-  const gf = panelFilters.carteras;
-  let nMonths;
-  if (!gf || gf.type === 'all' || gf.type === 'year') {
-    nMonths = new Set(invs.map(r => r.Fecha.slice(0, 7))).size || 1;
-  } else if (gf.type === '1m') {
-    nMonths = 1;
-  } else if (gf.type === '3m') {
-    nMonths = 3;
-  } else {
-    nMonths = 6;
-  }
-
-  let entries, hoverSuffix;
-  if (carterasMode === 'media') {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total / nMonths)])
-      .filter(([, avg]) => avg > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .reverse();
-    hoverSuffix = '€/mes';
-  } else {
-    entries = Object.entries(byConcepto)
-      .map(([c, total]) => [c, r2(total)])
-      .filter(([, t]) => t > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .reverse();
-    hoverSuffix = '€';
-  }
+  const entries = [...report.entries].reverse();
+  const hoverSuffix = report.hoverSuffix;
 
   if (!entries.length) { Plotly.purge('c-carteras'); return; }
-  const conceptos = entries.map(([c]) => c);
-  const valores   = entries.map(([, v]) => v);
+  const conceptos = entries.map(e => e.concepto);
+  const valores   = entries.map(e => e.valor);
   const maxV = Math.max(...valores);
   const L = baseLayout();
 
@@ -1755,71 +1499,37 @@ function chartCarteras(rows) {
   }, { responsive: true, displayModeBar: false });
 }
 
-function rollingMean(vals, dates, days) {
-  const ms = days * 86400000;
-  return vals.map((_, i) => {
-    const cut = new Date(dates[i]).getTime() - ms;
-    let s = 0, n = 0;
-    for (let j = 0; j <= i; j++) {
-      if (new Date(dates[j]).getTime() >= cut) { s += vals[j]; n++; }
-    }
-    return n ? s / n : vals[i];
-  });
-}
-
 // ─────────────────────────────────────────────
 // ANALYSIS
 // ─────────────────────────────────────────────
-function apuestasBody(_rows) {
-  // All metrics computed from FULL data — period filter only controls which closed rows appear in the table.
-  // Using filtered rows for KPIs causes banca=0 bugs (bet placed before cutoff, closed inside it)
-  // and the paradox of 1m P&L > 3m P&L when a losing bet sits between months.
-  const allBets        = data.filter(r => r.Tipo === 'Apuestas');
-  const closedConcepts = new Set(data.filter(r => r.Tipo === 'Apuestas_r').map(r => r.Concepto));
-  const openBets       = allBets.filter(r => !closedConcepts.has(r.Concepto));
-  const openGroups     = groupBy(openBets, 'Concepto');
-  const openCount      = Object.keys(openGroups).length;
-  const openTotal      = r2(Object.values(openGroups).reduce((s, rs) => s + sumC(rs), 0));
-
-  const allClosedBets = computeApuestas(data);
-  const totalApostado = r2(sumC(allBets));
-  const totalPnL      = allClosedBets.length ? allClosedBets.at(-1).balH : 0;
-  const wins          = allClosedBets.filter(b => b.bal > 0).length;
-  const winRate       = allClosedBets.length ? r2(wins / allClosedBets.length * 100) : 0;
-
-  if (!openCount && !allClosedBets.length) return '<div class="empty">No hay apuestas registradas todavía.</div>';
-
-  // Filter closed bets by close date for table display only
-  const closedBets = applyFilterByCloseDate(allClosedBets, panelFilters.apuestas);
+function apuestasBody(report) {
+  if (!report.openCount && !report.closedCount) return '<div class="empty">No hay apuestas registradas todavía.</div>';
 
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Total apostado</div>
-      <div class="section-kpi-value">${eur(totalApostado)}</div>
-      <div class="section-kpi-sub">${allBets.length} apuesta${allBets.length !== 1 ? 's' : ''}</div>
+      <div class="section-kpi-value">${eur(report.totalApostado)}</div>
+      <div class="section-kpi-sub">${report.totalBets} apuesta${report.totalBets !== 1 ? 's' : ''}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">P&amp;L neto</div>
-      <div class="section-kpi-value ${totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(totalPnL)}</div>
+      <div class="section-kpi-value ${report.totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.totalPnL)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Win rate</div>
-      <div class="section-kpi-value ${allClosedBets.length ? (winRate >= 50 ? 'num-pos' : 'num-neg') : ''}">${allClosedBets.length ? winRate.toFixed(1) + '%' : '—'}</div>
-      ${allClosedBets.length ? `<div class="section-kpi-sub">${wins} de ${allClosedBets.length} cerradas</div>` : ''}
+      <div class="section-kpi-value ${report.closedCount ? (report.winRate >= 50 ? 'num-pos' : 'num-neg') : ''}">${report.closedCount ? report.winRate.toFixed(1) + '%' : '—'}</div>
+      ${report.closedCount ? `<div class="section-kpi-sub">${report.wins} de ${report.closedCount} cerradas</div>` : ''}
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">En juego ahora</div>
-      <div class="section-kpi-value" style="${openCount ? 'color:var(--blue)' : ''}">${openCount ? openCount + ' pos.' : '—'}</div>
-      ${openCount ? `<div class="section-kpi-sub">${eur(openTotal)}</div>` : ''}
+      <div class="section-kpi-value" style="${report.openCount ? 'color:var(--blue)' : ''}">${report.openCount ? report.openCount + ' pos.' : '—'}</div>
+      ${report.openCount ? `<div class="section-kpi-sub">${eur(report.openTotal)}</div>` : ''}
     </div>
   </div>`;
 
   let openHtml = '';
-  if (openCount > 0) {
-    const positions = Object.entries(openGroups)
-      .map(([c, rs]) => ({ concepto: c, fi: minD(rs), banca: r2(sumC(rs)) }))
-      .sort((a, b) => b.fi.localeCompare(a.fi));
-    const tbody = positions.map(p => `<tr>
+  if (report.openCount > 0) {
+    const tbody = report.openPositions.map(p => `<tr>
       <td><b>${esc(p.concepto)}</b></td>
       <td class="nowrap" style="color:var(--muted)">${fd(p.fi)}</td>
       <td class="r">${eur(p.banca)}</td>
@@ -1827,7 +1537,7 @@ function apuestasBody(_rows) {
         onclick="openCloseModal(this)" data-tipo="Apuestas" data-concepto="${escAttr(p.concepto)}" data-monto="${p.banca}">Cerrar</button></td>
     </tr>`).join('');
     openHtml = `<div style="border-bottom:1px solid var(--border)">
-      <div class="open-pos-header">● Posiciones abiertas · ${openCount}</div>
+      <div class="open-pos-header">● Posiciones abiertas · ${report.openCount}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Concepto</th><th>Inicio</th><th class="r">Banca</th><th class="r">Acción</th></tr></thead>
         <tbody>${tbody}</tbody>
@@ -1836,8 +1546,8 @@ function apuestasBody(_rows) {
   }
 
   let closedHtml = '';
-  if (closedBets.length > 0) {
-    const tbody = closedBets.map(r => `<tr>
+  if (report.closedPositions.length > 0) {
+    const tbody = report.closedPositions.map(r => `<tr>
       <td class="nowrap">${esc(r.Concepto)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fi)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fr)}</td>
@@ -1849,7 +1559,7 @@ function apuestasBody(_rows) {
       <td class="r ${r.crecH >= 0 ? 'num-pos' : 'num-neg'}">${r.crecH.toFixed(2)}%</td>
     </tr>`).join('');
     closedHtml = `<div>
-      <div class="closed-pos-header">Historial cerrado · ${closedBets.length}</div>
+      <div class="closed-pos-header">Historial cerrado · ${report.closedPositions.length}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr>
           <th>Concepto</th><th>Inicio</th><th>Cierre</th>
@@ -1863,64 +1573,45 @@ function apuestasBody(_rows) {
   return kpisHtml + openHtml + closedHtml;
 }
 
-function renderApuestas(rows) {
+async function renderApuestas() {
+  const report = await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas);
   return `<div class="section" style="margin-bottom:14px">
     <div class="section-head">
       <span class="section-title">Análisis de Apuestas</span>
       <div style="display:flex;gap:4px" id="pf-apuestas">${panelFilterBar('apuestas', data)}</div>
     </div>
-    <div id="apuestas-body">${apuestasBody(rows)}</div>
+    <div id="apuestas-body">${apuestasBody(report)}</div>
   </div>`;
 }
 
-function inversionesBody(_rows) {
-  // KPIs always from full data — same reasoning as apuestasBody.
-  const allInv          = data.filter(r => r.Tipo === 'Inversión');
-  const closedConceptsI = new Set(data.filter(r => r.Tipo === 'Inversión_r').map(r => r.Concepto));
-  const openInv         = allInv.filter(r => !closedConceptsI.has(r.Concepto));
-  const openGroupsI     = groupBy(openInv, 'Concepto');
-  const openCountI      = Object.keys(openGroupsI).length;
-  const openTotalI      = r2(Object.values(openGroupsI).reduce((s, rs) => s + sumC(rs), 0));
-
-  const allClosedInv = computeInversiones(data);
-  const totalInv     = r2(sumC(allInv));
-  const lastClosed   = allClosedInv.length ? allClosedInv.at(-1) : null;
-  const totalPnL     = lastClosed ? lastClosed.balH : 0;
-  const totalRoi     = lastClosed ? lastClosed.roiH : 0;
-
-  if (!openCountI && !allClosedInv.length) return '<div class="empty">No hay carteras registradas todavía.</div>';
-
-  // Filter by close date for table display only
-  const closedInv = applyFilterByCloseDate(allClosedInv, panelFilters.inversiones);
+function inversionesBody(report) {
+  if (!report.openCount && !report.closedCount) return '<div class="empty">No hay carteras registradas todavía.</div>';
 
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Total en carteras</div>
-      <div class="section-kpi-value">${eur(totalInv)}</div>
-      <div class="section-kpi-sub">${allClosedInv.length + openCountI} cartera${(allClosedInv.length + openCountI) !== 1 ? 's' : ''}</div>
+      <div class="section-kpi-value">${eur(report.totalInv)}</div>
+      <div class="section-kpi-sub">${report.totalCarteras} cartera${report.totalCarteras !== 1 ? 's' : ''}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">P&amp;L neto</div>
-      <div class="section-kpi-value ${totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(totalPnL)}</div>
+      <div class="section-kpi-value ${report.totalPnL >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.totalPnL)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">ROI total</div>
-      <div class="section-kpi-value ${allClosedInv.length ? (totalRoi >= 0 ? 'num-pos' : 'num-neg') : ''}">${allClosedInv.length ? totalRoi.toFixed(2) + '%' : '—'}</div>
-      ${allClosedInv.length ? `<div class="section-kpi-sub">${allClosedInv.length} cerrada${allClosedInv.length !== 1 ? 's' : ''}</div>` : ''}
+      <div class="section-kpi-value ${report.closedCount ? (report.totalRoi >= 0 ? 'num-pos' : 'num-neg') : ''}">${report.closedCount ? report.totalRoi.toFixed(2) + '%' : '—'}</div>
+      ${report.closedCount ? `<div class="section-kpi-sub">${report.closedCount} cerrada${report.closedCount !== 1 ? 's' : ''}</div>` : ''}
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Abiertas ahora</div>
-      <div class="section-kpi-value" style="${openCountI ? 'color:var(--accent)' : ''}">${openCountI ? openCountI + ' cart.' : '—'}</div>
-      ${openCountI ? `<div class="section-kpi-sub">${eur(openTotalI)}</div>` : ''}
+      <div class="section-kpi-value" style="${report.openCount ? 'color:var(--accent)' : ''}">${report.openCount ? report.openCount + ' cart.' : '—'}</div>
+      ${report.openCount ? `<div class="section-kpi-sub">${eur(report.openTotal)}</div>` : ''}
     </div>
   </div>`;
 
   let openHtml = '';
-  if (openCountI > 0) {
-    const positions = Object.entries(openGroupsI)
-      .map(([c, rs]) => ({ concepto: c, fi: minD(rs), invertido: r2(sumC(rs)) }))
-      .sort((a, b) => b.invertido - a.invertido || b.fi.localeCompare(a.fi));
-    const tbody = positions.map(p => `<tr>
+  if (report.openCount > 0) {
+    const tbody = report.openPositions.map(p => `<tr>
       <td><b>${esc(p.concepto)}</b></td>
       <td class="nowrap" style="color:var(--muted)">${fd(p.fi)}</td>
       <td class="r">${eur(p.invertido)}</td>
@@ -1928,7 +1619,7 @@ function inversionesBody(_rows) {
         onclick="openCloseModal(this)" data-tipo="Inversión" data-concepto="${escAttr(p.concepto)}" data-monto="${p.invertido}">Cerrar</button></td>
     </tr>`).join('');
     openHtml = `<div style="border-bottom:1px solid var(--border)">
-      <div class="open-pos-header">● Carteras abiertas · ${openCountI}</div>
+      <div class="open-pos-header">● Carteras abiertas · ${report.openCount}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Cartera</th><th>Inicio</th><th class="r">Capital</th><th class="r">Acción</th></tr></thead>
         <tbody>${tbody}</tbody>
@@ -1937,8 +1628,8 @@ function inversionesBody(_rows) {
   }
 
   let closedHtml = '';
-  if (closedInv.length > 0) {
-    const tbody = closedInv.map(r => `<tr>
+  if (report.closedPositions.length > 0) {
+    const tbody = report.closedPositions.map(r => `<tr>
       <td class="nowrap">${esc(r.Concepto)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fi)}</td>
       <td class="nowrap" style="color:var(--muted)">${fd(r.fr)}</td>
@@ -1950,7 +1641,7 @@ function inversionesBody(_rows) {
       <td class="r ${r.roiH >= 0 ? 'num-pos' : 'num-neg'}">${r.roiH.toFixed(2)}%</td>
     </tr>`).join('');
     closedHtml = `<div>
-      <div class="closed-pos-header">Historial de carteras · ${closedInv.length}</div>
+      <div class="closed-pos-header">Historial de carteras · ${report.closedPositions.length}</div>
       <div style="overflow-x:auto"><table>
         <thead><tr>
           <th>Cartera</th><th>Inicio</th><th>Cierre</th>
@@ -1964,46 +1655,41 @@ function inversionesBody(_rows) {
   return kpisHtml + openHtml + closedHtml;
 }
 
-function renderInversiones(rows) {
+async function renderInversiones() {
+  const report = await fetchRangeReport('/api/accounts/ibkr/carteras', panelFilters.inversiones);
   return `<div class="section" style="margin-bottom:14px">
     <div class="section-head">
       <span class="section-title">Análisis de carteras</span>
       <div style="display:flex;gap:4px" id="pf-inversiones">${panelFilterBar('inversiones', data)}</div>
     </div>
-    <div id="inversiones-body">${inversionesBody(rows)}</div>
+    <div id="inversiones-body">${inversionesBody(report)}</div>
   </div>`;
 }
 
-function transferenciasBody(filteredRows) {
-  const allXfer = ibkrTransfers(data);
-  const list = ibkrTransfers(filteredRows);
-  const lifetimeRec = r2(allXfer.filter(r => r.dir === 'in').reduce((s, r) => s + r.Total, 0));
-  const lifetimeSent = r2(allXfer.filter(r => r.dir === 'out').reduce((s, r) => s + r.Total, 0));
-  const lifetimeNet = r2(lifetimeRec - lifetimeSent);
-
+function transferenciasBody(report) {
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Recibido</div>
-      <div class="section-kpi-value num-pos">${eur(lifetimeRec)}</div>
+      <div class="section-kpi-value num-pos">${eur(report.lifetimeRec)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Enviado</div>
-      <div class="section-kpi-value">${eur(lifetimeSent)}</div>
+      <div class="section-kpi-value">${eur(report.lifetimeSent)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Neto aportado</div>
-      <div class="section-kpi-value ${lifetimeNet >= 0 ? 'num-pos' : 'num-neg'}">${eur(lifetimeNet)}</div>
+      <div class="section-kpi-value ${report.lifetimeNet >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.lifetimeNet)}</div>
     </div>
   </div>`;
 
-  if (!allXfer.length) {
+  if (!report.totalCount) {
     return kpisHtml + '<div class="empty">Aún no hay transferencias con Openbank.</div>';
   }
-  if (!list.length) {
+  if (!report.items.length) {
     return kpisHtml + '<div class="empty">Sin transferencias en este período.</div>';
   }
 
-  const tbody = list.slice(0, 30).map(r => `<tr>
+  const tbody = report.items.map(r => `<tr>
     <td class="nowrap" style="color:var(--muted)">${fd(r.Fecha)}</td>
     <td><span class="xfer-dir ${r.dir === 'in' ? 'xfer-in' : 'xfer-out'}">${r.label}</span></td>
     <td>${esc(r.Concepto)}</td>
@@ -2016,7 +1702,8 @@ function transferenciasBody(filteredRows) {
   </table></div>`;
 }
 
-function renderTransferencias(rows) {
+async function renderTransferencias() {
+  const report = await fetchRangeReport('/api/accounts/ibkr/transferencias', panelFilters.transferencias);
   return `<div class="section" style="margin-bottom:14px;overflow:visible">
     <div class="section-head">
       <span class="section-title">Transferencias · Openbank ↔ IBKR</span>
@@ -2025,56 +1712,8 @@ function renderTransferencias(rows) {
         <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="openModal()">⇄ Nueva</button>
       </div>
     </div>
-    <div id="transferencias-body">${transferenciasBody(rows)}</div>
+    <div id="transferencias-body">${transferenciasBody(report)}</div>
   </div>`;
-}
-
-function computeApuestas(rows) {
-  const groups = groupBy(rows.filter(r => r.Tipo === 'Apuestas' || r.Tipo === 'Apuestas_r'), 'Concepto');
-  const out = [];
-  for (const [c, rs] of Object.entries(groups)) {
-    const hechas   = rs.filter(r => r.Tipo === 'Apuestas');
-    const retornos = rs.filter(r => r.Tipo === 'Apuestas_r');
-    if (!retornos.length) continue;
-    const banca    = sumC(hechas);
-    const devuelto = sumC(retornos);
-    const bal      = r2(devuelto - banca);
-    const crec     = banca > 0 ? r2(bal / banca * 100) : 0;
-    out.push({ Concepto: c, fi: minD(hechas), fr: maxD(retornos), banca: r2(banca), devuelto: r2(devuelto), bal, crec });
-  }
-  out.sort((a, b) => a.fr.localeCompare(b.fr));
-  let bH = 0, bAcum = 0;
-  for (const r of out) {
-    bH    = r2(bH + r.bal);
-    bAcum = r2(bAcum + r.banca);
-    r.balH  = bH;
-    r.crecH = bAcum > 0 ? r2(bH / bAcum * 100) : 0;
-  }
-  return out;
-}
-
-function computeInversiones(rows) {
-  const groups = groupBy(rows.filter(r => r.Tipo === 'Inversión' || r.Tipo === 'Inversión_r'), 'Concepto');
-  const out = [];
-  for (const [c, rs] of Object.entries(groups)) {
-    const inv      = rs.filter(r => r.Tipo === 'Inversión');
-    const retornos = rs.filter(r => r.Tipo === 'Inversión_r');
-    if (!retornos.length) continue;
-    const invertido = sumC(inv);
-    const devuelto  = sumC(retornos);
-    const bal       = r2(devuelto - invertido);
-    const roi       = invertido > 0 ? r2(bal / invertido * 100) : 0;
-    out.push({ Concepto: c, fi: minD(inv), fr: maxD(retornos), invertido: r2(invertido), devuelto: r2(devuelto), bal, roi });
-  }
-  out.sort((a, b) => a.fr.localeCompare(b.fr));
-  let bH = 0, iAcum = 0;
-  for (const r of out) {
-    bH    = r2(bH + r.bal);
-    iAcum = r2(iAcum + r.invertido);
-    r.balH = bH;
-    r.roiH = iAcum > 0 ? r2(bH / iAcum * 100) : 0;
-  }
-  return out;
 }
 
 // ─────────────────────────────────────────────
@@ -2486,13 +2125,6 @@ const r2       = v => Math.round(v * 100) / 100;
 const fd       = s => { if (!s) return '—'; const [y, mo, d] = s.replace('T', ' ').split(' ')[0].split('-').map(Number); return new Date(y, mo - 1, d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
 const escAttr  = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const esc      = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-function groupBy(arr, key) {
-  return arr.reduce((acc, r) => { (acc[r[key]] = acc[r[key]] || []).push(r); return acc; }, {});
-}
-const sumC  = arr => arr.reduce((s, r) => s + (r.Total || 0), 0);
-const minD  = arr => arr.reduce((m, r) => !m || r.Fecha < m ? r.Fecha : m, null) || '';
-const maxD  = arr => arr.reduce((m, r) => !m || r.Fecha > m ? r.Fecha : m, null) || '';
 
 function localISODate() {
   const d = new Date();

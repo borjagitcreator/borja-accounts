@@ -1,6 +1,6 @@
 # Cuentas — Panel de control financiero personal
 
-Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). Permite añadir movimientos, visualizar estadísticas y analizar apuestas/inversiones, con los datos guardados en CSV.
+Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). Permite añadir movimientos, visualizar estadísticas y analizar apuestas/inversiones, con los datos guardados en SQLite. Los CSV (`openbank.csv`/`ibkr.csv`) siguen existiendo como formato de import/export, pero ya no son la base de datos activa.
 
 ---
 
@@ -8,12 +8,21 @@ Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). 
 
 ```
 Cuentas/
-├── app.py              ← Backend Flask (servidor y API)
-├── index.html          ← Frontend completo (UI, gráficos, tablas)
-├── requirements.txt    ← Dependencias Python
-├── run.sh              ← Arranque (activa venv inversiones y lanza app.py)
-├── openbank.csv        ← Datos de Openbank
-├── ibkr.csv            ← Datos de IBKR
+├── app/main.py         ← Backend FastAPI (servidor, API y estático de frontend/dist/)
+├── frontend/           ← Frontend React + TypeScript + Vite (Bloque 5)
+│   ├── src/            ← Componentes, features, cliente API
+│   └── dist/           ← Build de producción (gitignored, `npm run build`)
+├── index.html          ← Frontend vanilla anterior al Bloque 5 (ya no se sirve;
+│                          se conserva para poder regenerar tests/golden_master/
+│                          snapshot_frontend.json si hiciera falta)
+├── pyproject.toml      ← Dependencias Python (gestionadas con uv)
+├── uv.lock             ← Lockfile de dependencias
+├── run.sh              ← Arranque (build de frontend + uv run uvicorn, puerto 8000)
+├── borja_accounts.db   ← Base de datos SQLite (en .gitignore, es la que usa la app)
+├── openbank.csv        ← Datos de Openbank (import/export, ya no activo)
+├── ibkr.csv            ← Datos de IBKR (import/export, ya no activo)
+├── scripts/migrate_csv_to_sqlite.py ← Importa los CSV a SQLite
+├── tests/golden_master/← Harness de regresión para el refactor (ver docs/ARCHITECTURE.md)
 └── README.md
 ```
 
@@ -21,26 +30,36 @@ Cuentas/
 
 ## Puesta en marcha
 
+Requiere [uv](https://docs.astral.sh/uv/) instalado (`brew install uv` o ver su web).
+
+Requiere también Node.js (frontend en `frontend/`, React + TypeScript + Vite).
+
 ```bash
-~/.venvs/inversiones/bin/pip install -r requirements.txt
+uv sync
+(cd frontend && npm install)
 
 # Los CSV con datos reales (openbank.csv, ibkr.csv) están en .gitignore.
 # En un clon nuevo, arranca a partir de los ejemplos:
 cp openbank.example.csv openbank.csv
 cp ibkr.example.csv ibkr.csv
 
+# Importa los CSV a SQLite (borja_accounts.db) -- es lo que la app lee/escribe realmente:
+uv run python scripts/migrate_csv_to_sqlite.py --db-path borja_accounts.db
+
 ./run.sh
 ```
 
-Abre automáticamente **Chrome** en **http://localhost:5000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
+`run.sh` reconstruye `frontend/dist/` (`npm run build`) antes de arrancar uvicorn, para no servir nunca un build desactualizado.
 
-El servidor arranca con `FLASK_DEBUG` opcional y `use_reloader=False`, para que el puerto se libere limpiamente con Ctrl+C.
+Abre automáticamente **Chrome** en **http://localhost:8000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
+
+El servidor corre con `uvicorn` sin `--reload`, para que el puerto se libere limpiamente con Ctrl+C.
 
 ---
 
-## Formato de los CSV
+## Formato de los CSV (import/export)
 
-Ambos CSV tienen las mismas cinco columnas:
+Ambos CSV tienen las mismas cinco columnas. Es el formato que entiende `scripts/migrate_csv_to_sqlite.py`, no la estructura interna de `borja_accounts.db` (ver `docs/ARCHITECTURE.md` §2.1 para el esquema SQLite real):
 
 | Columna  | Tipo     | Descripción                               |
 |----------|----------|-------------------------------------------|
@@ -90,6 +109,13 @@ El saldo se recalcula siempre desde cero (barrido completo) cada vez que se aña
 ---
 
 ## Funcionalidades de la interfaz
+
+> Esta sección describe el comportamiento funcional, que sigue siendo el
+> mismo tras el Bloque 5 (rewrite a React) salvo las excepciones listadas
+> en `docs/ARCHITECTURE.md` §0 (filtro de rango único por vista en vez de
+> uno por panel, sin media móvil 30d, sin "Top del mes", sin quick-picks de
+> importe, sin columnas Bal./Crec./ROI Hist.). Pendiente de reescribir a
+> fondo con el detalle de UI ya actualizado.
 
 ### Header
 Muestra el patrimonio total (Openbank + IBKR) y el desglose por cuenta. Contiene el botón de transferencia entre cuentas.
@@ -238,7 +264,7 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 
 | Método | Ruta                             | Descripción                                     |
 |--------|----------------------------------|-------------------------------------------------|
-| GET    | `/`                              | Sirve index.html                                |
+| GET    | `/`                              | Sirve el build de React (`frontend/dist/index.html`) |
 | GET    | `/api/patrimonio`                | Saldo actual de ambas cuentas                   |
 | GET    | `/api/data/<cuenta>`             | Movimientos JSON (incluye `_idx` por fila)      |
 | POST   | `/api/movimiento/<cuenta>`       | Añade un movimiento y recalcula el saldo        |
@@ -260,14 +286,14 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 - **Saldo chart (IBKR):** sin media móvil. **Openbank:** media 30d.
 - **Fechas en CSV** en `%Y-%m-%d %H:%M:%S.%f` para ordenamiento estable con `mergesort`.
 - **Plotly.js** desde CDN.
-- Flask solo en `localhost`. No exponer a red pública.
+- Servidor solo en `localhost` (puerto 8000). No exponer a red pública.
 
 ---
 
 ## Añadir una cuenta nueva
 
-1. Crear el CSV con la misma estructura (con un registro de `Saldo Inicial`)
-2. Añadir la entrada en `ARCHIVOS` en `app.py`
-3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `app.py` y en `TIPOS_POR_CUENTA` en `index.html`
+1. Insertar la fila en `accounts` (SQLite): `sqlite3 borja_accounts.db "INSERT INTO accounts (id, name, kind, currency) VALUES ('nueva', 'Nueva cuenta', 'CASH', 'EUR');"` — más una fila `Saldo Inicial` en `movements` con ese `account_id`.
+2. Añadir la entrada en `TIPOS_POR_CUENTA` en `domain/value_objects.py` (de ahí deriva qué cuentas conoce la API — ya no hace falta tocar rutas de fichero).
+3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `index.html` (todavía duplicado con el backend hasta que el frontend deje de mantener su propia copia)
 4. Añadir `{ type: '3m' }` para los paneles nuevos en `panelFilters` en `index.html`
 5. Añadir un tab nuevo en el HTML y la rama correspondiente en `render()`

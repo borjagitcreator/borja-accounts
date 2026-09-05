@@ -1,0 +1,766 @@
+{
+  "openbank_kpis": {
+    "mes": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo actual</div>\n      <div class=\"kpi-value\">8655,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Ingresos · este mes</div>\n      <div class=\"kpi-value pos\">1800,00€</div>\n      <div class=\"kpi-delta neu\">= igual al período anterior</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Gastos · este mes</div>\n      <div class=\"kpi-value neg\">1135,00€</div>\n      <div class=\"kpi-delta pos\">↓ -75,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Balance · este mes</div>\n      <div class=\"kpi-value pos\">665,00€</div>\n      <div class=\"kpi-delta pos\">↑ +195,00€ vs ant.</div>\n    </div>\n  ",
+    "trimestre": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo actual</div>\n      <div class=\"kpi-value\">8655,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Ingresos · últimos 3 meses</div>\n      <div class=\"kpi-value pos\">5400,00€</div>\n      <div class=\"kpi-delta neg\">↓ -235,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Gastos · últimos 3 meses</div>\n      <div class=\"kpi-value neg\">3995,00€</div>\n      <div class=\"kpi-delta neg\">↑ +180,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Balance · últimos 3 meses</div>\n      <div class=\"kpi-value pos\">1285,00€</div>\n      <div class=\"kpi-delta neg\">↓ -605,00€ vs ant.</div>\n    </div>\n  ",
+    "año": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo actual</div>\n      <div class=\"kpi-value\">8655,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Ingresos · este año</div>\n      <div class=\"kpi-value pos\">12.835,00€</div>\n      <div class=\"kpi-delta pos\">↑ +12.835,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Gastos · este año</div>\n      <div class=\"kpi-value neg\">9030,00€</div>\n      <div class=\"kpi-delta neg\">↑ +9030,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Balance · este año</div>\n      <div class=\"kpi-value pos\">3655,00€</div>\n      <div class=\"kpi-delta pos\">↑ +3655,00€ vs ant.</div>\n    </div>\n  "
+  },
+  "openbank_gasto_alert": "<div class=\"soft-alert warn\">Gastos este mes 1250,00€ · 1% por encima de la media de los 3 meses anteriores (1233,33€)</div>",
+  "openbank_top_merchants": "<div class=\"merchants-strip\">\n    <span class=\"mlabel\">Top del mes</span>\n    <button type=\"button\" class=\"chip\" title=\"Alquiler\" data-c=\"Alquiler\" onclick=\"filterByConcept(this.dataset.c)\">Alquiler <span class=\"chip-n\">900,00€</span></button><button type=\"button\" class=\"chip\" title=\"Supermercado\" data-c=\"Supermercado\" onclick=\"filterByConcept(this.dataset.c)\">Supermercado <span class=\"chip-n\">250,00€</span></button><button type=\"button\" class=\"chip\" title=\"Transporte\" data-c=\"Transporte\" onclick=\"filterByConcept(this.dataset.c)\">Transporte <span class=\"chip-n\">60,00€</span></button><button type=\"button\" class=\"chip\" title=\"Gimnasio\" data-c=\"Gimnasio\" onclick=\"filterByConcept(this.dataset.c)\">Gimnasio <span class=\"chip-n\">40,00€</span></button>\n  </div>",
+  "openbank_apuestas_body": "<div class=\"section-kpis\">\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Total apostado</div>\n      <div class=\"section-kpi-value\">300,00€</div>\n      <div class=\"section-kpi-sub\">3 apuestas</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">P&amp;L neto</div>\n      <div class=\"section-kpi-value num-neg\">-30,00€</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Win rate</div>\n      <div class=\"section-kpi-value num-pos\">50.0%</div>\n      <div class=\"section-kpi-sub\">1 de 2 cerradas</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">En juego ahora</div>\n      <div class=\"section-kpi-value\" style=\"color:var(--blue)\">1 pos.</div>\n      <div class=\"section-kpi-sub\">120,00€</div>\n    </div>\n  </div><div style=\"border-bottom:1px solid var(--border)\">\n      <div class=\"open-pos-header\">● Posiciones abiertas · 1</div>\n      <div style=\"overflow-x:auto\"><table>\n        <thead><tr><th>Concepto</th><th>Inicio</th><th class=\"r\">Banca</th><th class=\"r\">Acción</th></tr></thead>\n        <tbody><tr>\n      <td><b>B365 - 3</b></td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">28/05/2026</td>\n      <td class=\"r\">120,00€</td>\n      <td class=\"r\"><button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 10px;white-space:nowrap\"\n        onclick=\"openCloseModal(this)\" data-tipo=\"Apuestas\" data-concepto=\"B365 - 3\" data-monto=\"120\">Cerrar</button></td>\n    </tr></tbody>\n      </table></div>\n    </div>",
+  "openbank_movimientos_default": "<table>\n    <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class=\"r\">Importe</th><th class=\"r\">Saldo</th><th></th></tr></thead>\n    <tbody><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">15/07/2026</td>\n      <td><span class=\"badge b-nomina\">Nómina</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Sueldo julio\" onclick=\"filterByConcept(this.dataset.c)\">Sueldo julio</span></td>\n      <td class=\"r nowrap num-pos\">+1800.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">8655.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(44)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(44)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">08/07/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Transporte\" onclick=\"filterByConcept(this.dataset.c)\">Transporte</span></td>\n      <td class=\"r nowrap num-neg\">-60.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6855.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(43)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(43)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">05/07/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Supermercado\" onclick=\"filterByConcept(this.dataset.c)\">Supermercado</span></td>\n      <td class=\"r nowrap num-neg\">-130.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6960.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(41)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(41)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">05/07/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Restaurante\" onclick=\"filterByConcept(this.dataset.c)\">Restaurante</span></td>\n      <td class=\"r nowrap num-neg\">-45.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6915.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(42)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(42)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">01/07/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Alquiler\" onclick=\"filterByConcept(this.dataset.c)\">Alquiler</span></td>\n      <td class=\"r nowrap num-neg\">-900.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7090.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(40)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(40)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">25/06/2026</td>\n      <td><span class=\"badge b-transferencia\">Transferencia</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"A IBKR\" onclick=\"filterByConcept(this.dataset.c)\">A IBKR</span></td>\n      <td class=\"r nowrap num-neg\">-400.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7990.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(39)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(39)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">20/06/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Gimnasio\" onclick=\"filterByConcept(this.dataset.c)\">Gimnasio</span></td>\n      <td class=\"r nowrap num-neg\">-40.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">8390.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(38)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(38)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">15/06/2026</td>\n      <td><span class=\"badge b-nomina\">Nómina</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Sueldo junio\" onclick=\"filterByConcept(this.dataset.c)\">Sueldo junio</span></td>\n      <td class=\"r nowrap num-pos\">+1800.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">8430.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(37)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(37)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">08/06/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Transporte\" onclick=\"filterByConcept(this.dataset.c)\">Transporte</span></td>\n      <td class=\"r nowrap num-neg\">-60.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6630.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(36)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(36)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">06/06/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Supermercado\" onclick=\"filterByConcept(this.dataset.c)\">Supermercado</span></td>\n      <td class=\"r nowrap num-neg\">-250.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6690.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(35)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(35)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">01/06/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Alquiler\" onclick=\"filterByConcept(this.dataset.c)\">Alquiler</span></td>\n      <td class=\"r nowrap num-neg\">-900.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6940.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(34)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(34)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">28/05/2026</td>\n      <td><span class=\"badge b-apuestas\">Apuestas</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"B365 - 3\" onclick=\"filterByConcept(this.dataset.c)\">B365 - 3</span></td>\n      <td class=\"r nowrap num-neg\">-120.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7840.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(33)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(33)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">20/05/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Gimnasio\" onclick=\"filterByConcept(this.dataset.c)\">Gimnasio</span></td>\n      <td class=\"r nowrap num-neg\">-40.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7960.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(32)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(32)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">15/05/2026</td>\n      <td><span class=\"badge b-nomina\">Nómina</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Sueldo mayo\" onclick=\"filterByConcept(this.dataset.c)\">Sueldo mayo</span></td>\n      <td class=\"r nowrap num-pos\">+1800.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">8000.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(31)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(31)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">08/05/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Transporte\" onclick=\"filterByConcept(this.dataset.c)\">Transporte</span></td>\n      <td class=\"r nowrap num-neg\">-60.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6200.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(30)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(30)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">06/05/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Supermercado\" onclick=\"filterByConcept(this.dataset.c)\">Supermercado</span></td>\n      <td class=\"r nowrap num-neg\">-210.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6260.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(29)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(29)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">01/05/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Alquiler\" onclick=\"filterByConcept(this.dataset.c)\">Alquiler</span></td>\n      <td class=\"r nowrap num-neg\">-900.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">6470.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(28)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(28)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">20/04/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Gimnasio\" onclick=\"filterByConcept(this.dataset.c)\">Gimnasio</span></td>\n      <td class=\"r nowrap num-neg\">-40.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7370.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(27)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(27)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">15/04/2026</td>\n      <td><span class=\"badge b-nomina\">Nómina</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Sueldo abril\" onclick=\"filterByConcept(this.dataset.c)\">Sueldo abril</span></td>\n      <td class=\"r nowrap num-pos\">+1800.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">7410.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(26)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(26)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">10/04/2026</td>\n      <td><span class=\"badge b-apuestasr\">Cobro apuesta</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"B365 - 2\" onclick=\"filterByConcept(this.dataset.c)\">B365 - 2</span></td>\n      <td class=\"r nowrap num-pos\">+0.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">5610.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(25)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(25)\">Editar</button>\n          </div></td>\n    </tr></tbody>\n  </table>",
+  "openbank_charts_all": {
+    "c-saldo": {
+      "traces": [
+        {
+          "x": [
+            "2026-01-01 09:00:00",
+            "2026-01-05 10:00:00",
+            "2026-01-06 11:00:00",
+            "2026-01-08 09:00:00",
+            "2026-01-15 09:00:00",
+            "2026-01-20 09:00:00",
+            "2026-01-25 18:30:00",
+            "2026-02-01 09:00:00",
+            "2026-02-06 11:00:00",
+            "2026-02-08 09:00:00",
+            "2026-02-10 09:00:00",
+            "2026-02-15 09:00:00",
+            "2026-02-20 09:00:00",
+            "2026-02-22 12:00:00",
+            "2026-03-01 09:00:00",
+            "2026-03-06 11:00:00",
+            "2026-03-08 09:00:00",
+            "2026-03-12 09:00:00",
+            "2026-03-15 09:00:00",
+            "2026-03-18 20:00:00",
+            "2026-03-20 09:00:00",
+            "2026-03-25 09:00:00",
+            "2026-04-01 09:00:00",
+            "2026-04-06 11:00:00",
+            "2026-04-08 09:00:00",
+            "2026-04-10 15:00:00",
+            "2026-04-15 09:00:00",
+            "2026-04-20 09:00:00",
+            "2026-05-01 09:00:00",
+            "2026-05-06 11:00:00",
+            "2026-05-08 09:00:00",
+            "2026-05-15 09:00:00",
+            "2026-05-20 09:00:00",
+            "2026-05-28 09:00:00",
+            "2026-06-01 09:00:00",
+            "2026-06-06 11:00:00",
+            "2026-06-08 09:00:00",
+            "2026-06-15 09:00:00",
+            "2026-06-20 09:00:00",
+            "2026-06-25 10:00:00",
+            "2026-07-01 09:00:00",
+            "2026-07-05 11:00:00",
+            "2026-07-05 11:00:00",
+            "2026-07-08 09:00:00",
+            "2026-07-15 09:00:00"
+          ],
+          "y": [
+            5000,
+            4100,
+            3880,
+            3820,
+            5620,
+            5580,
+            5480,
+            4580,
+            4340,
+            4280,
+            4195,
+            5995,
+            5955,
+            5875,
+            4975,
+            4715,
+            4655,
+            4740,
+            6540,
+            6690,
+            6650,
+            6800,
+            5900,
+            5670,
+            5610,
+            5610,
+            7410,
+            7370,
+            6470,
+            6260,
+            6200,
+            8000,
+            7960,
+            7840,
+            6940,
+            6690,
+            6630,
+            8430,
+            8390,
+            7990,
+            7090,
+            6960,
+            6915,
+            6855,
+            8655
+          ],
+          "type": "scatter",
+          "mode": "lines",
+          "name": "Saldo (8655,00€)",
+          "line": {
+            "color": "#0969da",
+            "width": 2.5
+          },
+          "hovertemplate": "%{x|%d/%m/%y}: <b>%{y:,.2f}€</b><extra></extra>"
+        },
+        {
+          "x": [
+            "2026-01-01 09:00:00",
+            "2026-01-05 10:00:00",
+            "2026-01-06 11:00:00",
+            "2026-01-08 09:00:00",
+            "2026-01-15 09:00:00",
+            "2026-01-20 09:00:00",
+            "2026-01-25 18:30:00",
+            "2026-02-01 09:00:00",
+            "2026-02-06 11:00:00",
+            "2026-02-08 09:00:00",
+            "2026-02-10 09:00:00",
+            "2026-02-15 09:00:00",
+            "2026-02-20 09:00:00",
+            "2026-02-22 12:00:00",
+            "2026-03-01 09:00:00",
+            "2026-03-06 11:00:00",
+            "2026-03-08 09:00:00",
+            "2026-03-12 09:00:00",
+            "2026-03-15 09:00:00",
+            "2026-03-18 20:00:00",
+            "2026-03-20 09:00:00",
+            "2026-03-25 09:00:00",
+            "2026-04-01 09:00:00",
+            "2026-04-06 11:00:00",
+            "2026-04-08 09:00:00",
+            "2026-04-10 15:00:00",
+            "2026-04-15 09:00:00",
+            "2026-04-20 09:00:00",
+            "2026-05-01 09:00:00",
+            "2026-05-06 11:00:00",
+            "2026-05-08 09:00:00",
+            "2026-05-15 09:00:00",
+            "2026-05-20 09:00:00",
+            "2026-05-28 09:00:00",
+            "2026-06-01 09:00:00",
+            "2026-06-06 11:00:00",
+            "2026-06-08 09:00:00",
+            "2026-06-15 09:00:00",
+            "2026-06-20 09:00:00",
+            "2026-06-25 10:00:00",
+            "2026-07-01 09:00:00",
+            "2026-07-05 11:00:00",
+            "2026-07-05 11:00:00",
+            "2026-07-08 09:00:00",
+            "2026-07-15 09:00:00"
+          ],
+          "y": [
+            5000,
+            4550,
+            4326.666666666667,
+            4200,
+            4484,
+            4666.666666666667,
+            4782.857142857143,
+            4722.857142857143,
+            4903.333333333333,
+            4980,
+            4867.857142857143,
+            4921.428571428572,
+            4975,
+            5087.5,
+            5024.375,
+            5041.25,
+            4998.333333333333,
+            5138.125,
+            5431.25,
+            5518.125,
+            5643.888888888889,
+            5720.625,
+            5836.25,
+            5955.625,
+            6075,
+            6023.333333333333,
+            6292.5,
+            6338.571428571428,
+            6291.428571428572,
+            6342.857142857143,
+            6418.571428571428,
+            6951.666666666667,
+            7043.333333333333,
+            7121.666666666667,
+            7200,
+            7271.666666666667,
+            7343.333333333333,
+            7415,
+            7486.666666666667,
+            7558.571428571428,
+            7451.428571428572,
+            7454.285714285715,
+            7386.875,
+            7407.5,
+            7660.625
+          ],
+          "type": "scatter",
+          "mode": "lines",
+          "name": "Media 30d",
+          "line": {
+            "color": "#cf222e",
+            "width": 1.5,
+            "dash": "dash"
+          },
+          "opacity": 0.7,
+          "hovertemplate": "%{y:,.2f}€<extra>Media 30d</extra>"
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "plot_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 50,
+          "r": 16,
+          "t": 10,
+          "b": 36
+        },
+        "xaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "type": "date"
+        },
+        "yaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "ticksuffix": "€",
+          "zeroline": true,
+          "zerolinecolor": "rgba(0,0,0,.1)"
+        },
+        "legend": {
+          "orientation": "h",
+          "y": 1.1,
+          "x": 0,
+          "font": {
+            "size": 11
+          }
+        },
+        "hovermode": "x unified"
+      }
+    },
+    "c-mensual": {
+      "traces": [
+        {
+          "x": [
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07"
+          ],
+          "y": [
+            1800,
+            1800,
+            2185,
+            1800,
+            1800,
+            1800,
+            1800
+          ],
+          "type": "bar",
+          "name": "Ingresos",
+          "marker": {
+            "color": "rgba(26,127,55,.65)"
+          },
+          "hovertemplate": "%{y:,.2f}€<extra>Ingresos</extra>"
+        },
+        {
+          "x": [
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07"
+          ],
+          "y": [
+            -1320,
+            -1405,
+            -1260,
+            -1230,
+            -1330,
+            -1650,
+            -1135
+          ],
+          "type": "bar",
+          "name": "Gastos",
+          "marker": {
+            "color": "rgba(207,34,46,.55)"
+          },
+          "customdata": [
+            1320,
+            1405,
+            1260,
+            1230,
+            1330,
+            1650,
+            1135
+          ],
+          "hovertemplate": "%{customdata:,.2f}€<extra>Gastos</extra>"
+        },
+        {
+          "x": [
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07"
+          ],
+          "y": [
+            480,
+            395,
+            925,
+            570,
+            470,
+            150,
+            665
+          ],
+          "type": "scatter",
+          "mode": "lines+markers",
+          "name": "Balance",
+          "line": {
+            "color": "#9a6700",
+            "width": 2,
+            "dash": "dot"
+          },
+          "marker": {
+            "size": 5
+          },
+          "hovertemplate": "%{y:,.2f}€<extra>Balance</extra>"
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "plot_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 50,
+          "r": 16,
+          "t": 10,
+          "b": 36
+        },
+        "xaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "type": "category"
+        },
+        "yaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "ticksuffix": "€",
+          "zeroline": true,
+          "zerolinecolor": "rgba(0,0,0,.1)"
+        },
+        "legend": {
+          "orientation": "h",
+          "y": 1.1,
+          "x": 0,
+          "font": {
+            "size": 11
+          }
+        },
+        "hovermode": "x unified",
+        "barmode": "overlay"
+      }
+    },
+    "c-gastos": {
+      "traces": [
+        {
+          "x": [
+            6.43,
+            12.14,
+            34.29,
+            60,
+            220,
+            900
+          ],
+          "y": [
+            "<b>Restaurante</b>",
+            "<b>Reparación bici</b>",
+            "<b>Gimnasio</b>",
+            "<b>Transporte</b>",
+            "<b>Supermercado</b>",
+            "<b>Alquiler</b>"
+          ],
+          "type": "bar",
+          "orientation": "h",
+          "text": [
+            "6.43€",
+            "12.14€",
+            "34.29€",
+            "60.00€",
+            "220.00€",
+            "900.00€"
+          ],
+          "textposition": "outside",
+          "cliponaxis": false,
+          "textfont": {
+            "color": "#24292f",
+            "size": 12
+          },
+          "constraintext": "none",
+          "customdata": [
+            "Restaurante",
+            "Reparación bici",
+            "Gimnasio",
+            "Transporte",
+            "Supermercado",
+            "Alquiler"
+          ],
+          "marker": {
+            "color": [
+              6.43,
+              12.14,
+              34.29,
+              60,
+              220,
+              900
+            ],
+            "colorscale": "Teal",
+            "showscale": false
+          },
+          "hovertemplate": "%{customdata}: <b>%{x:,.2f}€/mes</b><extra></extra>"
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "plot_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 140,
+          "r": 120,
+          "t": 10,
+          "b": 36
+        },
+        "xaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "type": "linear",
+          "ticksuffix": "€",
+          "range": [
+            0,
+            1305
+          ]
+        },
+        "yaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#24292f",
+            "size": 13
+          },
+          "automargin": true,
+          "ticks": "outside",
+          "ticklen": 14,
+          "tickcolor": "rgba(0,0,0,0)"
+        },
+        "legend": {
+          "orientation": "h",
+          "y": 1.1,
+          "x": 0,
+          "font": {
+            "size": 11
+          }
+        },
+        "hovermode": "closest",
+        "showlegend": false
+      }
+    },
+    "c-donut": {
+      "traces": [
+        {
+          "type": "pie",
+          "hole": 0.48,
+          "labels": [
+            "<b>Alquiler</b>",
+            "<b>Supermercado</b>",
+            "<b>Transporte</b>",
+            "<b>Gimnasio</b>",
+            "<b>Reparación bici</b>",
+            "<b>Restaurante</b>"
+          ],
+          "values": [
+            6300,
+            1540,
+            420,
+            240,
+            85,
+            45
+          ],
+          "sort": false,
+          "customdata": [
+            "Alquiler",
+            "Supermercado",
+            "Transporte",
+            "Gimnasio",
+            "Reparación bici",
+            "Restaurante"
+          ],
+          "hovertemplate": "<b>%{customdata}</b><br>%{value:,.2f}€  ·  %{percent}<extra></extra>",
+          "texttemplate": "<b>%{percent}</b>",
+          "textfont": {
+            "size": 13,
+            "color": "#ffffff"
+          },
+          "insidetextorientation": "horizontal",
+          "marker": {
+            "line": {
+              "color": "#ffffff",
+              "width": 1.5
+            }
+          }
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 10,
+          "r": 10,
+          "t": 10,
+          "b": 10
+        },
+        "legend": {
+          "orientation": "v",
+          "x": 1.02,
+          "y": 0.5,
+          "xanchor": "left",
+          "yanchor": "middle",
+          "font": {
+            "size": 12
+          },
+          "bgcolor": "rgba(0,0,0,0)"
+        },
+        "showlegend": true
+      }
+    }
+  },
+  "ibkr_kpis": {
+    "mes": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo</div>\n      <div class=\"kpi-value\">1205,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Aportado neto · este mes</div>\n      <div class=\"kpi-value pos\">0,00€</div>\n      <div class=\"kpi-delta neu\">= igual al período anterior</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">En carteras</div>\n      <div class=\"kpi-value\">250,00€</div>\n      <div class=\"kpi-delta neu\">1 abierta</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">P&amp;L cerrado · este mes</div>\n      <div class=\"kpi-value pos\">0,00€</div>\n      <div class=\"kpi-delta neg\">↓ -100,00€ vs ant.</div>\n    </div>\n  ",
+    "trimestre": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo</div>\n      <div class=\"kpi-value\">1205,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Aportado neto · últimos 3 meses</div>\n      <div class=\"kpi-value pos\">400,00€</div>\n      <div class=\"kpi-delta pos\">↑ +400,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">En carteras</div>\n      <div class=\"kpi-value\">250,00€</div>\n      <div class=\"kpi-delta neu\">1 abierta</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">P&amp;L cerrado · últimos 3 meses</div>\n      <div class=\"kpi-value pos\">50,00€</div>\n      <div class=\"kpi-delta pos\">↑ +50,00€ vs ant.</div>\n    </div>\n  ",
+    "año": "\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Saldo</div>\n      <div class=\"kpi-value\">1205,00€</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">Aportado neto · este año</div>\n      <div class=\"kpi-value pos\">400,00€</div>\n      <div class=\"kpi-delta pos\">↑ +400,00€ vs ant.</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">En carteras</div>\n      <div class=\"kpi-value\">250,00€</div>\n      <div class=\"kpi-delta neu\">1 abierta</div>\n    </div>\n    <div class=\"kpi\">\n      <div class=\"kpi-label\">P&amp;L cerrado · este año</div>\n      <div class=\"kpi-value pos\">50,00€</div>\n      <div class=\"kpi-delta pos\">↑ +50,00€ vs ant.</div>\n    </div>\n  "
+  },
+  "ibkr_inversiones_body": "<div class=\"section-kpis\">\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Total en carteras</div>\n      <div class=\"section-kpi-value\">750,00€</div>\n      <div class=\"section-kpi-sub\">3 carteras</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">P&amp;L neto</div>\n      <div class=\"section-kpi-value num-pos\">50,00€</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">ROI total</div>\n      <div class=\"section-kpi-value num-pos\">10.00%</div>\n      <div class=\"section-kpi-sub\">2 cerradas</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Abiertas ahora</div>\n      <div class=\"section-kpi-value\" style=\"color:var(--accent)\">1 cart.</div>\n      <div class=\"section-kpi-sub\">250,00€</div>\n    </div>\n  </div><div style=\"border-bottom:1px solid var(--border)\">\n      <div class=\"open-pos-header\">● Carteras abiertas · 1</div>\n      <div style=\"overflow-x:auto\"><table>\n        <thead><tr><th>Cartera</th><th>Inicio</th><th class=\"r\">Capital</th><th class=\"r\">Acción</th></tr></thead>\n        <tbody><tr>\n      <td><b>Cartera Global</b></td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">12/04/2026</td>\n      <td class=\"r\">250,00€</td>\n      <td class=\"r\"><button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 10px;white-space:nowrap\"\n        onclick=\"openCloseModal(this)\" data-tipo=\"Inversión\" data-concepto=\"Cartera Global\" data-monto=\"250\">Cerrar</button></td>\n    </tr></tbody>\n      </table></div>\n    </div><div>\n      <div class=\"closed-pos-header\">Historial de carteras · 2</div>\n      <div style=\"overflow-x:auto\"><table>\n        <thead><tr>\n          <th>Cartera</th><th>Inicio</th><th>Cierre</th>\n          <th class=\"r\">Capital</th><th class=\"r\">Devuelto</th><th class=\"r\">Balance</th><th class=\"r\">ROI</th>\n          <th class=\"r\">Bal. Hist.</th><th class=\"r\">ROI Hist.</th>\n        </tr></thead><tbody><tr>\n      <td class=\"nowrap\">Cartera Tech</td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">10/01/2026</td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">10/05/2026</td>\n      <td class=\"r\">300,00€</td>\n      <td class=\"r\">400,00€</td>\n      <td class=\"r num-pos\">100,00€</td>\n      <td class=\"r num-pos\">33.33%</td>\n      <td class=\"r num-pos\">100,00€</td>\n      <td class=\"r num-pos\">33.33%</td>\n    </tr><tr>\n      <td class=\"nowrap\">Cartera Bonos</td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">05/02/2026</td>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">08/06/2026</td>\n      <td class=\"r\">200,00€</td>\n      <td class=\"r\">150,00€</td>\n      <td class=\"r num-neg\">-50,00€</td>\n      <td class=\"r num-neg\">-25.00%</td>\n      <td class=\"r num-pos\">50,00€</td>\n      <td class=\"r num-pos\">10.00%</td>\n    </tr></tbody>\n      </table></div>\n    </div>",
+  "ibkr_transferencias_body": "<div class=\"section-kpis\">\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Recibido</div>\n      <div class=\"section-kpi-value num-pos\">400,00€</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Enviado</div>\n      <div class=\"section-kpi-value\">0,00€</div>\n    </div>\n    <div class=\"section-kpi\">\n      <div class=\"section-kpi-label\">Neto aportado</div>\n      <div class=\"section-kpi-value num-pos\">400,00€</div>\n    </div>\n  </div><div style=\"overflow-x:auto\"><table>\n    <thead><tr><th>Fecha</th><th>Dirección</th><th>Concepto</th><th class=\"r\">Importe</th></tr></thead>\n    <tbody><tr>\n    <td class=\"nowrap\" style=\"color:var(--muted)\">25/06/2026</td>\n    <td><span class=\"xfer-dir xfer-in\">← Openbank</span></td>\n    <td>Desde OPENBANK</td>\n    <td class=\"r nowrap num-pos\">+400.00€</td>\n  </tr></tbody>\n  </table></div>",
+  "ibkr_movimientos_default": "<table>\n    <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class=\"r\">Importe</th><th class=\"r\">Saldo</th><th></th></tr></thead>\n    <tbody><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">02/07/2026</td>\n      <td><span class=\"badge b-ingreso\">Ingreso</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Dividendo\" onclick=\"filterByConcept(this.dataset.c)\">Dividendo</span></td>\n      <td class=\"r nowrap num-pos\">+15.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">1205.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(8)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(8)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">25/06/2026</td>\n      <td><span class=\"badge b-ingreso\">Ingreso</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Desde OPENBANK\" onclick=\"filterByConcept(this.dataset.c)\">Desde OPENBANK</span></td>\n      <td class=\"r nowrap num-pos\">+400.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">1190.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(7)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(7)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">08/06/2026</td>\n      <td><span class=\"badge b-inversionr\">Retorno inv.</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Cartera Bonos\" onclick=\"filterByConcept(this.dataset.c)\">Cartera Bonos</span></td>\n      <td class=\"r nowrap num-pos\">+150.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">790.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(6)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(6)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">10/05/2026</td>\n      <td><span class=\"badge b-inversionr\">Retorno inv.</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Cartera Tech\" onclick=\"filterByConcept(this.dataset.c)\">Cartera Tech</span></td>\n      <td class=\"r nowrap num-pos\">+400.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">640.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(5)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(5)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">12/04/2026</td>\n      <td><span class=\"badge b-inversion\">Inversión</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Cartera Global\" onclick=\"filterByConcept(this.dataset.c)\">Cartera Global</span></td>\n      <td class=\"r nowrap num-neg\">-250.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">240.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(4)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(4)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">01/03/2026</td>\n      <td><span class=\"badge b-gasto\">Gasto</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Comisión custodia\" onclick=\"filterByConcept(this.dataset.c)\">Comisión custodia</span></td>\n      <td class=\"r nowrap num-neg\">-10.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">490.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(3)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(3)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">05/02/2026</td>\n      <td><span class=\"badge b-inversion\">Inversión</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Cartera Bonos\" onclick=\"filterByConcept(this.dataset.c)\">Cartera Bonos</span></td>\n      <td class=\"r nowrap num-neg\">-200.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">500.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(2)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(2)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">10/01/2026</td>\n      <td><span class=\"badge b-inversion\">Inversión</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Cartera Tech\" onclick=\"filterByConcept(this.dataset.c)\">Cartera Tech</span></td>\n      <td class=\"r nowrap num-neg\">-300.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">700.00€</td>\n      <td class=\"r\"><div class=\"row-actions\">\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"duplicateMov(1)\">Duplicar</button>\n            <button class=\"btn btn-ghost\" style=\"font-size:11px;padding:3px 8px;white-space:nowrap\" onclick=\"openEditModal(1)\">Editar</button>\n          </div></td>\n    </tr><tr>\n      <td class=\"nowrap\" style=\"color:var(--muted)\">01/01/2026</td>\n      <td><span class=\"badge b-saldo\">Saldo Inicial</span></td>\n      <td><span class=\"concepto-click\" title=\"Filtrar por este concepto\" data-c=\"Apertura de cuenta\" onclick=\"filterByConcept(this.dataset.c)\">Apertura de cuenta</span></td>\n      <td class=\"r nowrap num-pos\">+1000.00€</td>\n      <td class=\"r nowrap\" style=\"font-weight:600\">1000.00€</td>\n      <td class=\"r\"></td>\n    </tr></tbody>\n  </table>",
+  "ibkr_charts_all": {
+    "c-saldo": {
+      "traces": [
+        {
+          "x": [
+            "2026-01-01 09:00:00",
+            "2026-01-10 09:00:00",
+            "2026-02-05 09:00:00",
+            "2026-03-01 09:00:00",
+            "2026-04-12 09:00:00",
+            "2026-05-10 09:00:00",
+            "2026-06-08 09:00:00",
+            "2026-06-25 10:30:00",
+            "2026-07-02 09:00:00"
+          ],
+          "y": [
+            1000,
+            700,
+            500,
+            490,
+            240,
+            640,
+            790,
+            1190,
+            1205
+          ],
+          "type": "scatter",
+          "mode": "lines",
+          "name": "Saldo (1205,00€)",
+          "line": {
+            "color": "#2F5D50",
+            "width": 2.5
+          },
+          "hovertemplate": "%{x|%d/%m/%y}: <b>%{y:,.2f}€</b><extra></extra>"
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "plot_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 50,
+          "r": 16,
+          "t": 10,
+          "b": 36
+        },
+        "xaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "type": "date"
+        },
+        "yaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "ticksuffix": "€",
+          "zeroline": true,
+          "zerolinecolor": "rgba(0,0,0,.1)"
+        },
+        "legend": {
+          "orientation": "h",
+          "y": 1.1,
+          "x": 0,
+          "font": {
+            "size": 11
+          }
+        },
+        "hovermode": "x unified"
+      }
+    },
+    "c-carteras": {
+      "traces": [
+        {
+          "x": [
+            200,
+            250,
+            300
+          ],
+          "y": [
+            "<b>Cartera Bonos</b>",
+            "<b>Cartera Global</b>",
+            "<b>Cartera Tech</b>"
+          ],
+          "type": "bar",
+          "orientation": "h",
+          "text": [
+            "200€",
+            "250€",
+            "300€"
+          ],
+          "textposition": "outside",
+          "cliponaxis": false,
+          "textfont": {
+            "color": "#24292f",
+            "size": 11
+          },
+          "constraintext": "none",
+          "customdata": [
+            "Cartera Bonos",
+            "Cartera Global",
+            "Cartera Tech"
+          ],
+          "marker": {
+            "color": "#2F5D50"
+          },
+          "hovertemplate": "%{customdata}: <b>%{x:,.2f}€</b><extra></extra>"
+        }
+      ],
+      "layout": {
+        "paper_bgcolor": "#ffffff",
+        "plot_bgcolor": "#ffffff",
+        "font": {
+          "family": "Outfit, system-ui",
+          "color": "#1c1917",
+          "size": 11
+        },
+        "margin": {
+          "l": 120,
+          "r": 70,
+          "t": 10,
+          "b": 36
+        },
+        "xaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#57606a",
+            "size": 10
+          },
+          "type": "linear",
+          "ticksuffix": "€",
+          "range": [
+            0,
+            405
+          ]
+        },
+        "yaxis": {
+          "gridcolor": "rgba(0,0,0,0.07)",
+          "tickfont": {
+            "color": "#24292f",
+            "size": 12
+          },
+          "automargin": true,
+          "ticks": "outside",
+          "ticklen": 10,
+          "tickcolor": "rgba(0,0,0,0)"
+        },
+        "legend": {
+          "orientation": "h",
+          "y": 1.1,
+          "x": 0,
+          "font": {
+            "size": 11
+          }
+        },
+        "hovermode": "closest",
+        "showlegend": false
+      }
+    }
+  }
+}

@@ -1,20 +1,16 @@
 import { useState } from 'react';
 import { fetchCarteras } from '../../api/client';
-import type { Movement } from '../../api/types';
-import { RangeFilterBar } from '../filters/RangeFilterBar';
 import type { RangeFilter } from '../filters/RangeFilter';
 import { useRangeReport } from '../filters/useRangeReport';
 import { ClosePositionModal, type ClosePositionRequest } from '../positions/ClosePositionModal';
 import { InversionesBody } from './InversionesBody';
 
 interface Props {
-  allData: Movement[];
   filter: RangeFilter;
-  onFilterChange: (f: RangeFilter) => void;
   onDataChanged: () => void;
 }
 
-export function InversionesSection({ allData, filter, onFilterChange, onDataChanged }: Props) {
+export function InversionesSection({ filter, onDataChanged }: Props) {
   const { report, reload } = useRangeReport(fetchCarteras, filter);
   const [closing, setClosing] = useState<ClosePositionRequest | null>(null);
 
@@ -24,7 +20,6 @@ export function InversionesSection({ allData, filter, onFilterChange, onDataChan
     <div className="section" style={{ marginBottom: 14 }}>
       <div className="section-head">
         <span className="section-title">Análisis de carteras</span>
-        <RangeFilterBar data={allData} filter={filter} onChange={onFilterChange} />
       </div>
       <InversionesBody report={report} onClosePosition={setClosing} />
 

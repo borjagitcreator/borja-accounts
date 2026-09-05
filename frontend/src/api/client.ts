@@ -2,22 +2,28 @@ import type {
   AccountKpis,
   AddMovementRequest,
   BettingReport,
+  CarterasRankingReport,
   DeleteResult,
   EditMovementRequest,
+  GastosMesActualReport,
+  GastosRankingReport,
   IbkrKpis,
   KpiPeriod,
+  MensualEvolucionReport,
   Movement,
   MutationResult,
   Patrimonio,
   PortfolioReport,
+  RankingMode,
+  SaldoEvolucionReport,
   TransferRequest,
   TransferResult,
   TransfersReport,
 } from './types';
 import type { RangeFilter } from '../features/filters/RangeFilter';
 
-async function fetchRangeReport<T>(path: string, filter: RangeFilter): Promise<T> {
-  const params = new URLSearchParams({ range: filter.type });
+async function fetchRangeReport<T>(path: string, filter: RangeFilter, extraParams?: Record<string, string>): Promise<T> {
+  const params = new URLSearchParams({ range: filter.type, ...extraParams });
   if (filter.year !== undefined) params.set('year', String(filter.year));
   const res = await fetch(`${path}?${params}`);
   return res.json();
@@ -89,4 +95,25 @@ export async function submitTransfer(body: TransferRequest): Promise<TransferRes
   });
   const json = await res.json();
   return { ok: res.ok, ...json };
+}
+
+export function fetchSaldoEvolucion(cuenta: string, filter: RangeFilter): Promise<SaldoEvolucionReport> {
+  return fetchRangeReport(`/api/accounts/${cuenta}/saldo-evolucion`, filter);
+}
+
+export function fetchMensualEvolucion(filter: RangeFilter): Promise<MensualEvolucionReport> {
+  return fetchRangeReport('/api/accounts/openbank/mensual-evolucion', filter);
+}
+
+export function fetchGastosRanking(filter: RangeFilter, mode: RankingMode): Promise<GastosRankingReport> {
+  return fetchRangeReport('/api/accounts/openbank/gastos-ranking', filter, { mode });
+}
+
+export function fetchCarterasRanking(filter: RangeFilter, mode: RankingMode): Promise<CarterasRankingReport> {
+  return fetchRangeReport('/api/accounts/ibkr/carteras-ranking', filter, { mode });
+}
+
+export async function fetchGastosMesActual(): Promise<GastosMesActualReport> {
+  const res = await fetch('/api/accounts/openbank/gastos-mes-actual');
+  return res.json();
 }

@@ -156,3 +156,59 @@ export interface TransferResult {
   saldo_destino: number;
   error?: string;
 }
+
+export interface SaldoEvolucionReport {
+  dates: string[];
+  saldos: number[];
+  actual: number;
+  mediaMovil?: number[] | null;
+}
+
+export interface MensualEvolucionReport {
+  meses: string[];
+  ingresos: number[];
+  gastos: number[];
+  balance: number[];
+}
+
+export interface RankingEntry {
+  concepto: string;
+  valor: number;
+}
+
+export interface GastosRankingSection {
+  entries: RankingEntry[];
+  hasGastos: boolean;
+  hoverSuffix: string;
+}
+
+export interface GastosDonutSection {
+  hasGastos: boolean;
+  labels: string[];
+  values: number[];
+}
+
+export interface GastosRankingReport {
+  ranking: GastosRankingSection;
+  donut: GastosDonutSection;
+}
+
+export interface CarterasRankingReport {
+  entries: RankingEntry[];
+  hoverSuffix: string;
+}
+
+export interface GastoAlert {
+  isWarning: boolean;
+  curTotal: number;
+  pct: number;
+  monthsCount: number;
+  avg: number;
+}
+
+export interface GastosMesActualReport {
+  alert: GastoAlert | null;
+  topMerchants: { concepto: string; total: number }[];
+}
+
+export type RankingMode = 'media' | 'total';

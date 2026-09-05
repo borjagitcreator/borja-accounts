@@ -3,11 +3,14 @@ import { AccountMark } from '../../components/AccountMark';
 import { KpiCards } from '../kpis/KpiCards';
 import { PeriodSelector } from '../kpis/PeriodSelector';
 import { useAccountKpis } from '../kpis/useAccountKpis';
+import { MovimientosSection } from '../movimientos/MovimientosSection';
+import { useAccountData } from '../movimientos/useAccountData';
 import type { KpiPeriod } from '../../api/types';
 
-export function OpenbankView() {
+export function OpenbankView({ onDataChanged }: { onDataChanged: () => void }) {
   const [period, setPeriod] = useState<KpiPeriod>('mes');
   const kpi = useAccountKpis('openbank', period);
+  const { data, reload } = useAccountData('openbank');
 
   return (
     <>
@@ -21,6 +24,8 @@ export function OpenbankView() {
         <PeriodSelector period={period} onChange={setPeriod} />
       </div>
       <div className="kpis">{kpi && <KpiCards kpi={kpi} period={period} />}</div>
+
+      {data && <MovimientosSection account="openbank" data={data} reload={reload} onDataChanged={onDataChanged} />}
     </>
   );
 }

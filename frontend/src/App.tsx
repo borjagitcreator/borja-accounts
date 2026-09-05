@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { Tabs } from './components/Tabs';
+import { ToastProvider } from './components/ToastContext';
 import { fetchPatrimonio } from './api/client';
 import type { AccountId, Patrimonio } from './api/types';
 import { OpenbankView } from './features/openbank/OpenbankView';
@@ -11,9 +12,13 @@ function App() {
   const [account, setAccount] = useState<AccountId>('openbank');
   const [patrimonio, setPatrimonio] = useState<Patrimonio | null>(null);
 
-  useEffect(() => {
+  const refreshPatrimonio = useCallback(() => {
     fetchPatrimonio().then(setPatrimonio);
   }, []);
+
+  useEffect(() => {
+    refreshPatrimonio();
+  }, [refreshPatrimonio]);
 
   useEffect(() => {
     document.body.classList.remove('acc-openbank', 'acc-ibkr');
@@ -21,11 +26,17 @@ function App() {
   }, [account]);
 
   return (
-    <>
+    <ToastProvider>
       <Header patrimonio={patrimonio} />
       <Tabs account={account} onChange={setAccount} />
-      <main className="content">{account === 'openbank' ? <OpenbankView /> : <IbkrView />}</main>
-    </>
+      <main className="content">
+        {account === 'openbank' ? (
+          <OpenbankView onDataChanged={refreshPatrimonio} />
+        ) : (
+          <IbkrView onDataChanged={refreshPatrimonio} />
+        )}
+      </main>
+    </ToastProvider>
   );
 }
 

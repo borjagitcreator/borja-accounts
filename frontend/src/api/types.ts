@@ -19,3 +19,39 @@ export interface Patrimonio {
   openbank: number;
   ibkr: number;
 }
+
+export interface Movement {
+  Fecha: string;
+  Tipo: string;
+  Concepto: string;
+  Total: number;
+  Saldo: number;
+  _idx: number | null;
+}
+
+export interface AddMovementRequest {
+  fecha: string;
+  tipo: string;
+  concepto: string;
+  total: number;
+}
+
+export interface EditMovementRequest {
+  idx: number;
+  tipo: string;
+  concepto: string;
+  total: number;
+}
+
+export interface MutationResult {
+  ok: boolean;
+  saldo: number;
+  error?: string;
+}
+
+export interface DeleteResult {
+  ok: boolean;
+  eliminado: Movement;
+  saldo: number;
+  error?: string;
+}

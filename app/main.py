@@ -1,13 +1,14 @@
 """
-Bloque 2 del refactor (docs/ARCHITECTURE.md): el dominio (Movement, Account,
-LedgerService) y los casos de uso de escritura viven fuera de este módulo,
-en domain/ y application/. Este fichero es ahora solo routing FastAPI —
-parsea el request, invoca el caso de uso correspondiente y traduce
-excepciones de dominio/infraestructura al mismo contrato JSON que exponía
-el app.py (Flask) original: mismos endpoints, mismos mensajes de error,
-mismo formato de fecha, mismo `_idx`/`idx` posicional (ver
-infrastructure/persistence/csv/repository.py sobre por qué la identidad
-real de un movimiento sigue siendo interna en este bloque).
+Bloque 3 del refactor (docs/ARCHITECTURE.md): SQLite reemplaza al CSV como
+store activo. El dominio (Movement, Account, LedgerService) y los casos de
+uso viven en domain/ y application/, sin cambios respecto al Bloque 2 --
+solo cambia qué implementación del puerto MovementRepository se conecta
+aquí. Este fichero sigue siendo solo routing FastAPI: parsea el request,
+invoca el caso de uso correspondiente y traduce excepciones de dominio al
+mismo contrato JSON que exponía el app.py (Flask) original.
+
+Los CSV reales (openbank.csv/ibkr.csv) no se leen ni escriben más desde
+aquí -- pasan a rol de import/export vía scripts/migrate_csv_to_sqlite.py.
 """
 import os
 import sys
@@ -28,18 +29,21 @@ from application.use_cases.edit_movement import EditMovementUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
 from domain.services.ledger import LedgerService
-from infrastructure.persistence.csv.repository import (
-    ARCHIVOS,
-    AccountDataNotFoundError,
-    AccountDataReadError,
-    CSVMovementRepository,
-)
+from domain.value_objects import TIPOS_POR_CUENTA
+from infrastructure.persistence.sqlite.repository import SQLiteMovementRepository
 
 BASE_DIR = _REPO_ROOT
+ARCHIVOS = set(TIPOS_POR_CUENTA)  # nombres de cuenta conocidos -- ya no rutas de fichero
+
+# Sin default oculto dentro de SQLiteMovementRepository (exige db_path
+# explícito) -- pero esta capa de configuración sí resuelve uno real, para
+# que `run.sh`/producción funcionen sin variables de entorno adicionales.
+# El harness pasa siempre su propia ruta temporal vía BORJA_ACCOUNTS_DB.
+DB_PATH = os.environ.get("BORJA_ACCOUNTS_DB", os.path.join(BASE_DIR, "borja_accounts.db"))
 
 app = FastAPI()
 
-repository = CSVMovementRepository(ARCHIVOS)
+repository = SQLiteMovementRepository(DB_PATH)
 ledger = LedgerService()
 
 
@@ -50,10 +54,6 @@ def _run(fn, *args, **kwargs):
         return fn(*args, **kwargs), None
     except DomainError as e:
         return None, JSONResponse({"error": str(e)}, status_code=e.status_code)
-    except AccountDataNotFoundError as e:
-        return None, JSONResponse({"error": str(e)}, status_code=404)
-    except AccountDataReadError as e:
-        return None, JSONResponse({"error": str(e)}, status_code=500)
 
 
 async def _read_json(request: Request):

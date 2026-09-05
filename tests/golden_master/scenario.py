@@ -1,7 +1,11 @@
 """
 Escenario determinista contra la app FastAPI actual (app/main.py), ejecutado
-siempre sobre una copia aislada de openbank.example.csv / ibkr.example.csv
-en un directorio temporal — nunca contra los CSV reales.
+siempre sobre una copia aislada de openbank.example.csv / ibkr.example.csv,
+importada a una base SQLite temporal — nunca contra los CSV ni la DB
+reales. Dos capas de aislamiento a propósito (ver memoria de proyecto sobre
+el incidente del Bloque 2): os.chdir(tmp) Y una BORJA_ACCOUNTS_DB apuntando
+a un fichero temporal explícito, para que un futuro cambio en cualquiera de
+las dos rutas de resolución no abra por accidente el estado real.
 
 `run_scenario()` devuelve un dict serializable que sirve tanto para congelar
 el snapshot inicial (generate_snapshot.py) como para compararlo en cada
@@ -11,13 +15,14 @@ comportamiento intencional se congela de nuevo ejecutando
 test en rojo se calle solo.
 
 El snapshot congelado se generó originalmente contra el app.py (Flask) que
-existía hasta el Bloque 1. Que este escenario siga pasando contra la nueva
-app FastAPI, sin regenerar el snapshot, ES la prueba de paridad entre ambas
-— no hace falta mantener Flask vivo para compararlo en caliente.
+existía hasta el Bloque 1, sobre CSV. Que este escenario siga pasando contra
+FastAPI + SQLite, sin regenerar el snapshot, ES la prueba de paridad entre
+las tres generaciones del backend.
 """
 import importlib.util
 import os
 import shutil
+import sys
 import tempfile
 
 from fastapi.testclient import TestClient
@@ -30,14 +35,30 @@ def _load_app_module(repo_root):
     return mod
 
 
+def _seed_sqlite_from_fixture(repo_root, csv_dir, db_path):
+    sys.path.insert(0, repo_root)
+    from infrastructure.persistence.csv.repository import ARCHIVOS, CSVMovementRepository
+    from infrastructure.persistence.sqlite.repository import SQLiteMovementRepository
+
+    archivos = {k: os.path.join(csv_dir, v) for k, v in ARCHIVOS.items()}
+    csv_repo = CSVMovementRepository(archivos)
+    sqlite_repo = SQLiteMovementRepository(db_path)
+    for account_id in ARCHIVOS:
+        sqlite_repo.save(account_id, csv_repo.load(account_id))
+
+
 def run_scenario(repo_root):
     tmp = tempfile.mkdtemp(prefix="golden_master_")
     try:
         shutil.copy(os.path.join(repo_root, "openbank.example.csv"), os.path.join(tmp, "openbank.csv"))
         shutil.copy(os.path.join(repo_root, "ibkr.example.csv"), os.path.join(tmp, "ibkr.csv"))
+        db_path = os.path.join(tmp, "test.db")
+        _seed_sqlite_from_fixture(repo_root, tmp, db_path)
 
         cwd_before = os.getcwd()
+        env_before = os.environ.get("BORJA_ACCOUNTS_DB")
         os.chdir(tmp)
+        os.environ["BORJA_ACCOUNTS_DB"] = db_path
         try:
             appmod = _load_app_module(repo_root)
             client = TestClient(appmod.app)
@@ -105,5 +126,9 @@ def run_scenario(repo_root):
             return result
         finally:
             os.chdir(cwd_before)
+            if env_before is None:
+                os.environ.pop("BORJA_ACCOUNTS_DB", None)
+            else:
+                os.environ["BORJA_ACCOUNTS_DB"] = env_before
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

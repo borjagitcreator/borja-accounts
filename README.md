@@ -1,6 +1,6 @@
 # Cuentas — Panel de control financiero personal
 
-Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). Permite añadir movimientos, visualizar estadísticas y analizar apuestas/inversiones, con los datos guardados en CSV.
+Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). Permite añadir movimientos, visualizar estadísticas y analizar apuestas/inversiones, con los datos guardados en SQLite. Los CSV (`openbank.csv`/`ibkr.csv`) siguen existiendo como formato de import/export, pero ya no son la base de datos activa.
 
 ---
 
@@ -13,8 +13,10 @@ Cuentas/
 ├── pyproject.toml      ← Dependencias Python (gestionadas con uv)
 ├── uv.lock             ← Lockfile de dependencias
 ├── run.sh              ← Arranque (uv run uvicorn, puerto 8000)
-├── openbank.csv        ← Datos de Openbank
-├── ibkr.csv            ← Datos de IBKR
+├── borja_accounts.db   ← Base de datos SQLite (en .gitignore, es la que usa la app)
+├── openbank.csv        ← Datos de Openbank (import/export, ya no activo)
+├── ibkr.csv            ← Datos de IBKR (import/export, ya no activo)
+├── scripts/migrate_csv_to_sqlite.py ← Importa los CSV a SQLite
 ├── tests/golden_master/← Harness de regresión para el refactor (ver docs/ARCHITECTURE.md)
 └── README.md
 ```
@@ -33,6 +35,9 @@ uv sync
 cp openbank.example.csv openbank.csv
 cp ibkr.example.csv ibkr.csv
 
+# Importa los CSV a SQLite (borja_accounts.db) -- es lo que la app lee/escribe realmente:
+uv run python scripts/migrate_csv_to_sqlite.py --db-path borja_accounts.db
+
 ./run.sh
 ```
 
@@ -42,9 +47,9 @@ El servidor corre con `uvicorn` sin `--reload`, para que el puerto se libere lim
 
 ---
 
-## Formato de los CSV
+## Formato de los CSV (import/export)
 
-Ambos CSV tienen las mismas cinco columnas:
+Ambos CSV tienen las mismas cinco columnas. Es el formato que entiende `scripts/migrate_csv_to_sqlite.py`, no la estructura interna de `borja_accounts.db` (ver `docs/ARCHITECTURE.md` §2.1 para el esquema SQLite real):
 
 | Columna  | Tipo     | Descripción                               |
 |----------|----------|-------------------------------------------|
@@ -270,8 +275,8 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 
 ## Añadir una cuenta nueva
 
-1. Crear el CSV con la misma estructura (con un registro de `Saldo Inicial`)
-2. Añadir la entrada en `ARCHIVOS` en `app/main.py`
-3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `app/main.py` y en `TIPOS_POR_CUENTA` en `index.html`
+1. Insertar la fila en `accounts` (SQLite): `sqlite3 borja_accounts.db "INSERT INTO accounts (id, name, kind, currency) VALUES ('nueva', 'Nueva cuenta', 'CASH', 'EUR');"` — más una fila `Saldo Inicial` en `movements` con ese `account_id`.
+2. Añadir la entrada en `TIPOS_POR_CUENTA` en `domain/value_objects.py` (de ahí deriva qué cuentas conoce la API — ya no hace falta tocar rutas de fichero).
+3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `index.html` (todavía duplicado con el backend hasta que el frontend deje de mantener su propia copia)
 4. Añadir `{ type: '3m' }` para los paneles nuevos en `panelFilters` en `index.html`
 5. Añadir un tab nuevo en el HTML y la rama correspondiente en `render()`

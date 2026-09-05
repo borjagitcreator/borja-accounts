@@ -79,7 +79,7 @@ def run_scenario(repo_root):
             index_response = client.get("/")
             assert index_response.status_code == 200, "GET / no responde 200"
             assert index_response.headers["content-type"].startswith("text/html"), "GET / no sirve HTML"
-            assert len(index_response.content) > 0, "GET / sirve una respuesta vacía"
+            assert '<div id="root">' in index_response.text, "GET / no sirve el shell de la SPA (frontend/dist/index.html)"
 
             result = {}
 

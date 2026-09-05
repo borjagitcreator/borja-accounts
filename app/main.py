@@ -23,6 +23,7 @@ if _REPO_ROOT not in sys.path:
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from application.use_cases.add_movement import AddMovementUseCase
 from application.use_cases.delete_movement import DeleteMovementUseCase
@@ -57,6 +58,14 @@ app = FastAPI()
 repository = SQLiteMovementRepository(DB_PATH)
 ledger = LedgerService()
 
+# Bloque 5: el frontend pasa de index.html (vanilla) a un build de Vite en
+# frontend/dist/, generado con `npm run build` (gitignored, ver CI). No se
+# borra index.html en este commit -- run_frontend_harness.mjs sigue
+# leyéndolo para poder re-derivar snapshot_frontend.json/
+# snapshot_frontend_values.json si el vanilla cambiara.
+FRONTEND_DIST = os.path.join(BASE_DIR, "frontend", "dist")
+app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+
 
 def _run(fn, *args, **kwargs):
     """Invoca un caso de uso y traduce sus excepciones al mismo contrato
@@ -90,7 +99,7 @@ async def _read_json(request: Request):
 
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(BASE_DIR, "index.html"))
+    return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
 
 
 @app.get("/api/patrimonio")

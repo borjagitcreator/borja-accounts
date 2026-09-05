@@ -3,6 +3,10 @@ set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+# GET / sirve frontend/dist/ (build de Vite, gitignored) -- se reconstruye
+# aquí para no arrancar nunca contra un build desactualizado.
+(cd frontend && npm run build)
+
 URL="http://localhost:8000"
 # Abre el navegador cuando el servidor ya esté escuchando
 (

@@ -17,3 +17,10 @@ borja_accounts.db
 clientportal.gw.zip
 clientportal.gw/
 .pytest_cache/
+
+# Build de producción del frontend (Bloque 5) -- generado con
+# `npm run build` en frontend/, servido por app/main.py (GET /). CI lo
+# construye antes de correr pytest (ver .github/workflows/ci.yml);
+# node_modules ya está cubierto por frontend/.gitignore, pero dist/ se
+# repite aquí para que no dependa de conocer el gitignore anidado.
+frontend/dist/

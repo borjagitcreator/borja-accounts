@@ -8,11 +8,16 @@ Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). 
 
 ```
 Cuentas/
-├── app/main.py         ← Backend FastAPI (servidor y API)
-├── index.html          ← Frontend completo (UI, gráficos, tablas)
+├── app/main.py         ← Backend FastAPI (servidor, API y estático de frontend/dist/)
+├── frontend/           ← Frontend React + TypeScript + Vite (Bloque 5)
+│   ├── src/            ← Componentes, features, cliente API
+│   └── dist/           ← Build de producción (gitignored, `npm run build`)
+├── index.html          ← Frontend vanilla anterior al Bloque 5 (ya no se sirve;
+│                          se conserva para poder regenerar tests/golden_master/
+│                          snapshot_frontend.json si hiciera falta)
 ├── pyproject.toml      ← Dependencias Python (gestionadas con uv)
 ├── uv.lock             ← Lockfile de dependencias
-├── run.sh              ← Arranque (uv run uvicorn, puerto 8000)
+├── run.sh              ← Arranque (build de frontend + uv run uvicorn, puerto 8000)
 ├── borja_accounts.db   ← Base de datos SQLite (en .gitignore, es la que usa la app)
 ├── openbank.csv        ← Datos de Openbank (import/export, ya no activo)
 ├── ibkr.csv            ← Datos de IBKR (import/export, ya no activo)
@@ -27,8 +32,11 @@ Cuentas/
 
 Requiere [uv](https://docs.astral.sh/uv/) instalado (`brew install uv` o ver su web).
 
+Requiere también Node.js (frontend en `frontend/`, React + TypeScript + Vite).
+
 ```bash
 uv sync
+(cd frontend && npm install)
 
 # Los CSV con datos reales (openbank.csv, ibkr.csv) están en .gitignore.
 # En un clon nuevo, arranca a partir de los ejemplos:
@@ -40,6 +48,8 @@ uv run python scripts/migrate_csv_to_sqlite.py --db-path borja_accounts.db
 
 ./run.sh
 ```
+
+`run.sh` reconstruye `frontend/dist/` (`npm run build`) antes de arrancar uvicorn, para no servir nunca un build desactualizado.
 
 Abre automáticamente **Chrome** en **http://localhost:8000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
 
@@ -99,6 +109,13 @@ El saldo se recalcula siempre desde cero (barrido completo) cada vez que se aña
 ---
 
 ## Funcionalidades de la interfaz
+
+> Esta sección describe el comportamiento funcional, que sigue siendo el
+> mismo tras el Bloque 5 (rewrite a React) salvo las excepciones listadas
+> en `docs/ARCHITECTURE.md` §0 (filtro de rango único por vista en vez de
+> uno por panel, sin media móvil 30d, sin "Top del mes", sin quick-picks de
+> importe, sin columnas Bal./Crec./ROI Hist.). Pendiente de reescribir a
+> fondo con el detalle de UI ya actualizado.
 
 ### Header
 Muestra el patrimonio total (Openbank + IBKR) y el desglose por cuenta. Contiene el botón de transferencia entre cuentas.
@@ -247,7 +264,7 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 
 | Método | Ruta                             | Descripción                                     |
 |--------|----------------------------------|-------------------------------------------------|
-| GET    | `/`                              | Sirve index.html                                |
+| GET    | `/`                              | Sirve el build de React (`frontend/dist/index.html`) |
 | GET    | `/api/patrimonio`                | Saldo actual de ambas cuentas                   |
 | GET    | `/api/data/<cuenta>`             | Movimientos JSON (incluye `_idx` por fila)      |
 | POST   | `/api/movimiento/<cuenta>`       | Añade un movimiento y recalcula el saldo        |

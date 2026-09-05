@@ -9,6 +9,7 @@ import type {
   Movement,
   MutationResult,
   Patrimonio,
+  PortfolioReport,
 } from './types';
 import type { RangeFilter } from '../features/filters/RangeFilter';
 
@@ -67,4 +68,8 @@ export async function deleteLastMovement(cuenta: string): Promise<DeleteResult> 
 
 export function fetchApuestas(filter: RangeFilter): Promise<BettingReport> {
   return fetchRangeReport('/api/accounts/openbank/apuestas', filter);
+}
+
+export function fetchCarteras(filter: RangeFilter): Promise<PortfolioReport> {
+  return fetchRangeReport('/api/accounts/ibkr/carteras', filter);
 }

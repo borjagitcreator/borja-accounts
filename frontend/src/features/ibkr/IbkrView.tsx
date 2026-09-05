@@ -5,10 +5,13 @@ import { PeriodSelector } from '../kpis/PeriodSelector';
 import { useIbkrKpis } from '../kpis/useIbkrKpis';
 import { MovimientosSection } from '../movimientos/MovimientosSection';
 import { useAccountData } from '../movimientos/useAccountData';
+import { InversionesSection } from '../inversiones/InversionesSection';
+import { DEFAULT_RANGE_FILTER, type RangeFilter } from '../filters/RangeFilter';
 import type { KpiPeriod } from '../../api/types';
 
 export function IbkrView({ onDataChanged }: { onDataChanged: () => void }) {
   const [period, setPeriod] = useState<KpiPeriod>('mes');
+  const [rangeFilter, setRangeFilter] = useState<RangeFilter>(DEFAULT_RANGE_FILTER);
   const { kpi, reload: reloadKpis } = useIbkrKpis(period);
   const { data, reload: reloadData } = useAccountData('ibkr');
 
@@ -30,6 +33,10 @@ export function IbkrView({ onDataChanged }: { onDataChanged: () => void }) {
         <PeriodSelector period={period} onChange={setPeriod} />
       </div>
       <div className="kpis">{kpi && <KpiCardsIbkr kpi={kpi} period={period} />}</div>
+
+      {data && (
+        <InversionesSection allData={data} filter={rangeFilter} onFilterChange={setRangeFilter} onDataChanged={refreshAll} />
+      )}
 
       {data && <MovimientosSection account="ibkr" data={data} onDataChanged={refreshAll} />}
     </>

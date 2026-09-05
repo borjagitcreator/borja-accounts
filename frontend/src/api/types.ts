@@ -96,3 +96,33 @@ export interface BettingReport {
   winRate: number;
   wins: number;
 }
+
+export interface OpenInvestPosition {
+  concepto: string;
+  fi: string;
+  invertido: number;
+}
+
+export interface ClosedInvestPosition {
+  Concepto: string;
+  fi: string;
+  fr: string;
+  invertido: number;
+  devuelto: number;
+  bal: number;
+  roi: number;
+  balH: number;
+  roiH: number;
+}
+
+export interface PortfolioReport {
+  openCount: number;
+  closedCount: number;
+  openPositions: OpenInvestPosition[];
+  closedPositions: ClosedInvestPosition[];
+  openTotal: number;
+  totalInv: number;
+  totalCarteras: number;
+  totalPnL: number;
+  totalRoi: number;
+}

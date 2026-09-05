@@ -9,3 +9,10 @@ venv/
 # Datos financieros personales — NO subir al repo (los .example sí se versionan)
 openbank.csv
 ibkr.csv
+
+# Client Portal Gateway de IBKR — binario propietario redistribuible (~10MB),
+# incluye keystore (root/vertx.jks) y contraseña en claro en conf.yaml.
+# Se descarga aparte: http://download2.interactivebrokers.com/portal/clientportal.gw.zip
+clientportal.gw.zip
+clientportal.gw/
+.pytest_cache/

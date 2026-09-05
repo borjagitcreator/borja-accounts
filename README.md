@@ -10,10 +10,12 @@ Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). 
 Cuentas/
 ├── app.py              ← Backend Flask (servidor y API)
 ├── index.html          ← Frontend completo (UI, gráficos, tablas)
-├── requirements.txt    ← Dependencias Python
-├── run.sh              ← Arranque (activa venv inversiones y lanza app.py)
+├── pyproject.toml      ← Dependencias Python (gestionadas con uv)
+├── uv.lock             ← Lockfile de dependencias
+├── run.sh              ← Arranque (uv run + lanza app.py)
 ├── openbank.csv        ← Datos de Openbank
 ├── ibkr.csv            ← Datos de IBKR
+├── tests/golden_master/← Harness de regresión para el refactor (ver docs/ARCHITECTURE.md)
 └── README.md
 ```
 
@@ -21,8 +23,10 @@ Cuentas/
 
 ## Puesta en marcha
 
+Requiere [uv](https://docs.astral.sh/uv/) instalado (`brew install uv` o ver su web).
+
 ```bash
-~/.venvs/inversiones/bin/pip install -r requirements.txt
+uv sync
 
 # Los CSV con datos reales (openbank.csv, ibkr.csv) están en .gitignore.
 # En un clon nuevo, arranca a partir de los ejemplos:

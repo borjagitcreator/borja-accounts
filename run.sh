@@ -2,7 +2,6 @@
 set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-source ~/.venvs/inversiones/bin/activate
 
 URL="http://localhost:5000"
 # Abre el navegador cuando el servidor ya esté escuchando
@@ -16,4 +15,4 @@ URL="http://localhost:5000"
   done
 ) &
 
-python app.py
+uv run python app.py

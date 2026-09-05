@@ -1,7 +1,7 @@
 """
-Escenario determinista contra el app.py actual, ejecutado siempre sobre una
-copia aislada de openbank.example.csv / ibkr.example.csv en un directorio
-temporal — nunca contra los CSV reales.
+Escenario determinista contra la app FastAPI actual (app/main.py), ejecutado
+siempre sobre una copia aislada de openbank.example.csv / ibkr.example.csv
+en un directorio temporal — nunca contra los CSV reales.
 
 `run_scenario()` devuelve un dict serializable que sirve tanto para congelar
 el snapshot inicial (generate_snapshot.py) como para compararlo en cada
@@ -9,15 +9,22 @@ bloque futuro del refactor (test_golden_master.py). Cualquier cambio de
 comportamiento intencional se congela de nuevo ejecutando
 `generate_snapshot.py` a mano — nunca se actualiza el snapshot para que un
 test en rojo se calle solo.
+
+El snapshot congelado se generó originalmente contra el app.py (Flask) que
+existía hasta el Bloque 1. Que este escenario siga pasando contra la nueva
+app FastAPI, sin regenerar el snapshot, ES la prueba de paridad entre ambas
+— no hace falta mantener Flask vivo para compararlo en caliente.
 """
 import importlib.util
 import os
 import shutil
 import tempfile
 
+from fastapi.testclient import TestClient
+
 
 def _load_app_module(repo_root):
-    spec = importlib.util.spec_from_file_location("app_under_test", os.path.join(repo_root, "app.py"))
+    spec = importlib.util.spec_from_file_location("app_under_test", os.path.join(repo_root, "app", "main.py"))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -33,14 +40,20 @@ def run_scenario(repo_root):
         os.chdir(tmp)
         try:
             appmod = _load_app_module(repo_root)
-            client = appmod.app.test_client()
+            client = TestClient(appmod.app)
+
+            # GET / debe servir index.html byte a byte. No forma parte del
+            # dict comparado contra el snapshot (ese no lo contiene) —
+            # falla aquí mismo, con un mensaje claro, si diverge.
+            expected_index = open(os.path.join(repo_root, "index.html"), "rb").read()
+            assert client.get("/").content == expected_index, "GET / no sirve index.html byte a byte"
 
             result = {}
 
             # --- Snapshot A: solo lectura sobre el fixture intacto ---
-            result["initial_patrimonio"] = client.get("/api/patrimonio").get_json()
-            result["initial_data_openbank"] = client.get("/api/data/openbank").get_json()
-            result["initial_data_ibkr"] = client.get("/api/data/ibkr").get_json()
+            result["initial_patrimonio"] = client.get("/api/patrimonio").json()
+            result["initial_data_openbank"] = client.get("/api/data/openbank").json()
+            result["initial_data_ibkr"] = client.get("/api/data/ibkr").json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []
@@ -54,7 +67,7 @@ def run_scenario(repo_root):
                     "path": path,
                     "request": json_body,
                     "status": resp.status_code,
-                    "response": resp.get_json(),
+                    "response": resp.json(),
                 })
 
             call("alta_gasto_simple", "post", "/api/movimiento/openbank", {
@@ -72,7 +85,7 @@ def run_scenario(repo_root):
 
             # idx de "Test Cafetería" tras las altas anteriores: se resuelve leyendo
             # el estado actual en vez de asumir una posición fija.
-            data_ob = client.get("/api/data/openbank").get_json()
+            data_ob = client.get("/api/data/openbank").json()
             idx_cafeteria = next(r["_idx"] for r in data_ob if r["Concepto"] == "Test Cafetería")
             call("edita_gasto_cafeteria", "put", "/api/movimiento/openbank", {
                 "idx": idx_cafeteria, "tipo": "Gasto", "concepto": "Test Cafetería", "total": 5.00,
@@ -85,9 +98,9 @@ def run_scenario(repo_root):
             })
 
             result["mutation_steps"] = steps
-            result["final_patrimonio"] = client.get("/api/patrimonio").get_json()
-            result["final_data_openbank"] = client.get("/api/data/openbank").get_json()
-            result["final_data_ibkr"] = client.get("/api/data/ibkr").get_json()
+            result["final_patrimonio"] = client.get("/api/patrimonio").json()
+            result["final_data_openbank"] = client.get("/api/data/openbank").json()
+            result["final_data_ibkr"] = client.get("/api/data/ibkr").json()
 
             return result
         finally:

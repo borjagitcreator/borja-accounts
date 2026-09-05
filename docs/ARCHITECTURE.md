@@ -97,6 +97,26 @@ docs/
 
 **Regla de dependencia**: `domain` no importa nada de `application`/`infrastructure`/`interfaces`. `application` depende solo de `domain` + puertos. `infrastructure` implementa los puertos. `interfaces` orquesta casos de uso vía FastAPI. El **frontend solo habla con el backend** — nunca directamente con el CPGW (evita CORS/certificado autofirmado/cookies de sesión en el navegador; el `conf.yaml` del gateway ya tiene `allowCredentials: false`, lo que rompería una llamada browser→gateway).
 
+### 2.1 Esquema relacional (SQLite, Bloque 3)
+
+Cuentas y carteras son **filas**, no tablas ni ficheros. Añadir una cuenta nueva es un `INSERT` en `accounts`, nunca tocar código (elimina el proceso manual de 5 pasos que el README actual documenta para "añadir una cuenta nueva").
+
+```
+accounts        id PK, name, kind (CASH | INVESTMENT), currency
+movements       id PK, account_id FK→accounts, occurred_at, type, concept, amount, transfer_link_id FK→transfers (nullable)
+transfers       id PK, from_account_id FK→accounts, to_account_id FK→accounts, amount, occurred_at, movement_out_id FK→movements, movement_in_id FK→movements
+
+portfolios      id PK, account_id FK→accounts, cash_balance
+assets          id PK, ticker (unique), name, currency
+positions       id PK, portfolio_id FK→portfolios, asset_id FK→assets, quantity, avg_buy_price, target_price
+trades          id PK, position_id FK→positions, type (BUY|SELL), quantity, price, executed_at
+```
+
+- `Saldo` no es una columna persistida por fila (hoy se reescribe entera en cada movimiento) — se calcula bajo demanda o se cachea aparte, nunca se muta fila a fila.
+- `transfer_link_id` reemplaza la heurística actual de `isTransferIn`/`isTransferOut` (detectar transferencias por texto libre en `Concepto`).
+- Una cuenta `INVESTMENT` tiene un `portfolio` (1:1 por defecto); `positions` cuelga del `portfolio`, no de la cuenta — una cartera admite N activos sin tocar el esquema.
+- `openbank.csv`/`ibkr.csv` como nombres de fichero desaparecen del todo: pasan a ser dos filas en `accounts`, indistinguibles en esquema de cualquier cuenta añadida después.
+
 ## 3. Comparación 1:1
 
 | Pieza actual | Estado objetivo | Responsabilidad | Acción |

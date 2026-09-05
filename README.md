@@ -8,11 +8,11 @@ Interfaz web local para llevar el seguimiento de dos cuentas (Openbank e IBKR). 
 
 ```
 Cuentas/
-├── app.py              ← Backend Flask (servidor y API)
+├── app/main.py         ← Backend FastAPI (servidor y API)
 ├── index.html          ← Frontend completo (UI, gráficos, tablas)
 ├── pyproject.toml      ← Dependencias Python (gestionadas con uv)
 ├── uv.lock             ← Lockfile de dependencias
-├── run.sh              ← Arranque (uv run + lanza app.py)
+├── run.sh              ← Arranque (uv run uvicorn, puerto 8000)
 ├── openbank.csv        ← Datos de Openbank
 ├── ibkr.csv            ← Datos de IBKR
 ├── tests/golden_master/← Harness de regresión para el refactor (ver docs/ARCHITECTURE.md)
@@ -36,9 +36,9 @@ cp ibkr.example.csv ibkr.csv
 ./run.sh
 ```
 
-Abre automáticamente **Chrome** en **http://localhost:5000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
+Abre automáticamente **Chrome** en **http://localhost:8000** (también puedes abrirlo a mano). Se fuerza Chrome porque en Firefox sobre Wayland/COSMIC los popups nativos de `<select>` e `<input type="date">` pueden no desplegarse (bug del compositor, no de la app).
 
-El servidor arranca con `FLASK_DEBUG` opcional y `use_reloader=False`, para que el puerto se libere limpiamente con Ctrl+C.
+El servidor corre con `uvicorn` sin `--reload`, para que el puerto se libere limpiamente con Ctrl+C.
 
 ---
 
@@ -264,14 +264,14 @@ El botón "⇄ Transferencia" en el header abre un modal con origen, destino, im
 - **Saldo chart (IBKR):** sin media móvil. **Openbank:** media 30d.
 - **Fechas en CSV** en `%Y-%m-%d %H:%M:%S.%f` para ordenamiento estable con `mergesort`.
 - **Plotly.js** desde CDN.
-- Flask solo en `localhost`. No exponer a red pública.
+- Servidor solo en `localhost` (puerto 8000). No exponer a red pública.
 
 ---
 
 ## Añadir una cuenta nueva
 
 1. Crear el CSV con la misma estructura (con un registro de `Saldo Inicial`)
-2. Añadir la entrada en `ARCHIVOS` en `app.py`
-3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `app.py` y en `TIPOS_POR_CUENTA` en `index.html`
+2. Añadir la entrada en `ARCHIVOS` en `app/main.py`
+3. Añadir los tipos disponibles en `TIPOS_POR_CUENTA` en `app/main.py` y en `TIPOS_POR_CUENTA` en `index.html`
 4. Añadir `{ type: '3m' }` para los paneles nuevos en `panelFilters` en `index.html`
 5. Añadir un tab nuevo en el HTML y la rama correspondiente en `render()`

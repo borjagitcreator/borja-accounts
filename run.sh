@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-URL="http://localhost:5000"
+URL="http://localhost:8000"
 # Abre el navegador cuando el servidor ya esté escuchando
 (
   for _ in $(seq 1 30); do
@@ -15,4 +15,4 @@ URL="http://localhost:5000"
   done
 ) &
 
-uv run python app.py
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000

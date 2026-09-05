@@ -4,8 +4,10 @@ version = "0.1.0"
 description = "Panel de control financiero personal — cuentas y cartera de inversión"
 requires-python = ">=3.11"
 dependencies = [
-    "flask>=3.1,<4.0",
+    "fastapi>=0.141.1",
+    "httpx>=0.28.1",
     "pandas>=2.3,<3.0",
+    "uvicorn[standard]>=0.52.4",
 ]
 
 [dependency-groups]

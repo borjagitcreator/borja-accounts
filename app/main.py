@@ -12,6 +12,7 @@ aquí -- pasan a rol de import/export vía scripts/migrate_csv_to_sqlite.py.
 """
 import os
 import sys
+from datetime import datetime, timezone
 
 # Garantiza que domain/application/infrastructure (paquetes hermanos de
 # app/, en la raíz del repo) sean importables sin importar cómo se cargue
@@ -26,6 +27,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from application.use_cases.add_movement import AddMovementUseCase
 from application.use_cases.delete_movement import DeleteMovementUseCase
 from application.use_cases.edit_movement import EditMovementUseCase
+from application.use_cases.get_account_kpis import GetAccountKPIsUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
 from domain.services.ledger import LedgerService
@@ -54,6 +56,17 @@ def _run(fn, *args, **kwargs):
         return fn(*args, **kwargs), None
     except DomainError as e:
         return None, JSONResponse({"error": str(e)}, status_code=e.status_code)
+
+
+def _reference_now() -> datetime:
+    """Instante "ahora" usado por los cálculos de período (KPIs, etc.).
+    Inyectable vía BORJA_ACCOUNTS_REFERENCE_NOW (ISO 8601) para que el
+    golden master sea reproducible sin importar cuándo se ejecute; en
+    producción no se setea esa variable y se usa el reloj real."""
+    override = os.environ.get("BORJA_ACCOUNTS_REFERENCE_NOW")
+    if override:
+        return datetime.fromisoformat(override)
+    return datetime.now(timezone.utc)
 
 
 async def _read_json(request: Request):
@@ -101,6 +114,21 @@ def get_data(cuenta: str):
         }
         for i, m in enumerate(movements)
     ]
+
+
+@app.get("/api/accounts/{cuenta}/kpis")
+def get_account_kpis(cuenta: str, period: str = "mes"):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    kpi, err = _run(GetAccountKPIsUseCase(repository).execute, cuenta, period, _reference_now())
+    if err:
+        return err
+    return {
+        "saldo": kpi.saldo,
+        "ingresos": kpi.ingresos, "ingresosDelta": {"diff": kpi.ingresos_delta.diff},
+        "gastos": kpi.gastos, "gastosDelta": {"diff": kpi.gastos_delta.diff},
+        "balance": kpi.balance, "balanceDelta": {"diff": kpi.balance_delta.diff},
+    }
 
 
 @app.post("/api/movimiento/{cuenta}")

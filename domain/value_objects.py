@@ -17,3 +17,8 @@ TIPOS_POR_CUENTA = {
 }
 
 TIPOS_POSITIVOS = {"Ingreso", "Saldo Inicial", "Nómina", "Inversión_r", "Devolución", "Apuestas_r"}
+
+# Igual a TIPOS_INGRESO/TIPOS_NEGATIVOS en index.html: TIPOS_POSITIVOS es
+# idéntico a TIPOS_INGRESO; TIPOS_NEGATIVOS es un conjunto explícito, no el
+# complemento genérico de TIPOS_POSITIVOS.
+TIPOS_NEGATIVOS = {"Gasto", "Apuestas", "Inversión", "Transferencia"}

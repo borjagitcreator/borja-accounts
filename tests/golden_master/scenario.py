@@ -27,6 +27,10 @@ import tempfile
 
 from fastapi.testclient import TestClient
 
+# Mismo instante que FIXED_NOW en run_frontend_harness.mjs -- ambos harnesses
+# deben congelar "ahora" en el mismo punto para que sus resultados casen.
+FIXED_REFERENCE_NOW = "2026-07-15T12:00:00+00:00"
+
 
 def _load_app_module(repo_root):
     spec = importlib.util.spec_from_file_location("app_under_test", os.path.join(repo_root, "app", "main.py"))
@@ -57,8 +61,10 @@ def run_scenario(repo_root):
 
         cwd_before = os.getcwd()
         env_before = os.environ.get("BORJA_ACCOUNTS_DB")
+        reference_env_before = os.environ.get("BORJA_ACCOUNTS_REFERENCE_NOW")
         os.chdir(tmp)
         os.environ["BORJA_ACCOUNTS_DB"] = db_path
+        os.environ["BORJA_ACCOUNTS_REFERENCE_NOW"] = FIXED_REFERENCE_NOW
         try:
             appmod = _load_app_module(repo_root)
             client = TestClient(appmod.app)
@@ -75,6 +81,16 @@ def run_scenario(repo_root):
             result["initial_patrimonio"] = client.get("/api/patrimonio").json()
             result["initial_data_openbank"] = client.get("/api/data/openbank").json()
             result["initial_data_ibkr"] = client.get("/api/data/ibkr").json()
+
+            # Endpoints de agregación (Bloque 4): el frontend deja de calcular
+            # esto localmente y lo consume de aquí. run_frontend_harness.mjs
+            # lee estas mismas claves para alimentar las funciones de
+            # presentación (kpiCardsHtml, ...) y comparar contra
+            # snapshot_frontend.json, que no se regenera.
+            result["openbank_kpis_by_period"] = {
+                period: client.get(f"/api/accounts/openbank/kpis?period={period}").json()
+                for period in ("mes", "trimestre", "año")
+            }
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []
@@ -130,5 +146,9 @@ def run_scenario(repo_root):
                 os.environ.pop("BORJA_ACCOUNTS_DB", None)
             else:
                 os.environ["BORJA_ACCOUNTS_DB"] = env_before
+            if reference_env_before is None:
+                os.environ.pop("BORJA_ACCOUNTS_REFERENCE_NOW", None)
+            else:
+                os.environ["BORJA_ACCOUNTS_REFERENCE_NOW"] = reference_env_before
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

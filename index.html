@@ -842,7 +842,7 @@ async function loadAccount(acc) {
   try {
     const res = await fetch(`/api/data/${acc}`);
     data = await res.json();
-    render(acc, data);
+    await render(acc, data);
   } catch {
     document.getElementById('main').innerHTML = '<div class="loading">Error al cargar los datos.</div>';
   }
@@ -1066,7 +1066,12 @@ function kpiCardsHtml(kpi) {
   `;
 }
 
-function setKpiFilter(type) {
+async function fetchAccountKpis(cuenta, period) {
+  const res = await fetch(`/api/accounts/${cuenta}/kpis?period=${encodeURIComponent(period)}`);
+  return res.json();
+}
+
+async function setKpiFilter(type) {
   panelFilters.kpi = { type };
   document.querySelectorAll('.kpi-period-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.kpi === type);
@@ -1074,7 +1079,7 @@ function setKpiFilter(type) {
   const el = document.getElementById('kpi-cards');
   if (!el) return;
   if (account === 'ibkr') el.innerHTML = kpiCardsIbkrHtml(computeIbkrKPIs(data));
-  else el.innerHTML = kpiCardsHtml(computeKPIs(data));
+  else el.innerHTML = kpiCardsHtml(await fetchAccountKpis('openbank', type));
 }
 
 function markSvg(kind, sizeClass = '') {
@@ -1152,13 +1157,13 @@ function renderBottomGrid(acc) {
 // ─────────────────────────────────────────────
 // RENDER
 // ─────────────────────────────────────────────
-function render(acc, rows) {
+async function render(acc, rows) {
   const isOB = acc === 'openbank';
   movSearch = { tipo: '', concepto: '', fecha: '' };
   const kpiType = panelFilters.kpi.type;
 
   if (isOB) {
-    const kpi = computeKPIs(rows);
+    const kpi = await fetchAccountKpis('openbank', kpiType);
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ob')}
@@ -1289,53 +1294,6 @@ function render(acc, rows) {
 // ─────────────────────────────────────────────
 // KPIs
 // ─────────────────────────────────────────────
-function computeKPIs(allRows) {
-  const sorted = [...allRows].sort((a, b) => a.Fecha.localeCompare(b.Fecha));
-  const saldo  = sorted.length ? sorted.at(-1).Saldo : 0;
-  const kpiType = panelFilters.kpi.type;
-
-  const TIPOS_KPI_ING = new Set(['Nómina', 'Ingreso', 'Devolución']);
-  const TIPOS_KPI_GAS = new Set(['Gasto', 'Transferencia']);
-  const sum = rs => {
-    let ing = 0, gas = 0, balIng = 0, balGas = 0;
-    for (const r of rs) {
-      if (TIPOS_KPI_ING.has(r.Tipo)) ing += r.Total;
-      if (TIPOS_KPI_GAS.has(r.Tipo)) gas += r.Total;
-      if (TIPOS_INGRESO.has(r.Tipo) && r.Tipo !== 'Saldo Inicial') balIng += r.Total;
-      else if (TIPOS_NEGATIVOS.has(r.Tipo)) balGas += r.Total;
-    }
-    return { ingresos: r2(ing), gastos: r2(gas), balance: r2(balIng - balGas) };
-  };
-
-  let curr, prv;
-  if (kpiType === 'trimestre') {
-    // Últimos 3 meses de calendario (ej. abr+may+jun) vs los 3 anteriores
-    const cut  = calendarMonthStart(2);
-    const cut2 = calendarMonthStart(5);
-    curr = sum(allRows.filter(r => r.Fecha >= cut));
-    prv  = sum(allRows.filter(r => r.Fecha >= cut2 && r.Fecha < cut));
-  } else if (kpiType === 'año') {
-    const y  = new Date().getFullYear().toString();
-    const py = (new Date().getFullYear() - 1).toString();
-    curr = sum(allRows.filter(r => r.Fecha.startsWith(y)));
-    prv  = sum(allRows.filter(r => r.Fecha.startsWith(py)));
-  } else {
-    const m  = new Date().toISOString().slice(0, 7);
-    const _d = new Date();
-    const pm = new Date(_d.getFullYear(), _d.getMonth() - 1, 1).toISOString().slice(0, 7);
-    curr = sum(allRows.filter(r => r.Fecha.slice(0, 7) === m));
-    prv  = sum(allRows.filter(r => r.Fecha.slice(0, 7) === pm));
-  }
-
-  const mk = (c, p) => ({ diff: r2(c - p) });
-  return {
-    saldo,
-    ingresos: curr.ingresos, ingresosDelta: mk(curr.ingresos, prv.ingresos),
-    gastos:   curr.gastos,   gastosDelta:   mk(curr.gastos,   prv.gastos),
-    balance:  curr.balance,  balanceDelta:  mk(curr.balance,  prv.balance),
-  };
-}
-
 function periodSlices(kpiType) {
   if (kpiType === 'trimestre') {
     const cut  = calendarMonthStart(2);

@@ -9,13 +9,14 @@
 //
 // Uso: node run_frontend_harness.mjs > snapshot_frontend.json
 // Fijado a Europe/Madrid (TZ real del usuario), NO a UTC: varios cálculos de
-// "mes actual" en index.html (monthKey, y las ramas kpiType==='mes' de
-// computeKPIs/periodSlices) hacen `new Date(y, m, 1).toISOString().slice(0,7)`.
+// "mes actual" en index.html (monthKey, y la rama kpiType==='mes' de
+// periodSlices, usada por IBKR) hacen `new Date(y, m, 1).toISOString().slice(0,7)`.
 // Con un TZ de offset positivo esa conversión a UTC cruza medianoche hacia
 // atrás y resuelve SIEMPRE al mes anterior — es un bug real de producción,
-// no un artefacto de este harness. El golden master debe capturar el
-// comportamiento tal cual es hoy (bug incluido); corregirlo es decisión de
-// un bloque posterior explícito, no de aquí. Ver docs/ARCHITECTURE.md.
+// no un artefacto de este harness. El equivalente para Openbank vivía en
+// computeKPIs y se movió (Bloque 4) a domain/services/kpi.py, donde se
+// preserva a propósito igual que aquí. Corregirlo es decisión de un bloque
+// posterior explícito, no de aquí. Ver docs/ARCHITECTURE.md.
 process.env.TZ = "Europe/Madrid";
 
 import { readFileSync } from "node:fs";
@@ -76,6 +77,9 @@ function loadBackendFixture() {
   return {
     openbank: snap.initial_data_openbank,
     ibkr: snap.initial_data_ibkr,
+    // Ya calculado por GET /api/accounts/openbank/kpis (Bloque 4) -- el
+    // frontend deja de recalcular esto, solo lo pinta.
+    openbankKpisByPeriod: snap.openbank_kpis_by_period,
   };
 }
 
@@ -85,7 +89,7 @@ function loadBackendFixture() {
 // termina en un `return {...}` explícito para exponerlas por closure, sin
 // tocar una sola línea del cuerpo original.
 const EXPOSE = [
-  "computeKPIs", "computeIbkrKPIs", "kpiCardsHtml", "kpiCardsIbkrHtml",
+  "computeIbkrKPIs", "kpiCardsHtml", "kpiCardsIbkrHtml",
   "apuestasBody", "inversionesBody", "transferenciasBody",
   "gastoAlertHtml", "topMerchantsHtml", "renderMovimientos", "searchedMovs",
   "chartSaldo", "chartMensual", "chartGastos", "chartDonut", "chartCarteras",
@@ -121,7 +125,7 @@ function run() {
   result.openbank_kpis = {};
   for (const t of KPI_TYPES) {
     api.setPanelFilter("kpi", { type: t });
-    result.openbank_kpis[t] = api.kpiCardsHtml(api.computeKPIs(fixture.openbank));
+    result.openbank_kpis[t] = api.kpiCardsHtml(fixture.openbankKpisByPeriod[t]);
   }
   result.openbank_gasto_alert = api.gastoAlertHtml();
   result.openbank_top_merchants = api.topMerchantsHtml();

@@ -1034,5 +1034,52 @@
       },
       "status": 200
     }
-  ]
+  ],
+  "openbank_kpis_by_period": {
+    "año": {
+      "balance": 3655.0,
+      "balanceDelta": {
+        "diff": 3655.0
+      },
+      "gastos": 9030.0,
+      "gastosDelta": {
+        "diff": 9030.0
+      },
+      "ingresos": 12835.0,
+      "ingresosDelta": {
+        "diff": 12835.0
+      },
+      "saldo": 8655.0
+    },
+    "mes": {
+      "balance": 665.0,
+      "balanceDelta": {
+        "diff": 195.0
+      },
+      "gastos": 1135.0,
+      "gastosDelta": {
+        "diff": -75.0
+      },
+      "ingresos": 1800.0,
+      "ingresosDelta": {
+        "diff": 0.0
+      },
+      "saldo": 8655.0
+    },
+    "trimestre": {
+      "balance": 1285.0,
+      "balanceDelta": {
+        "diff": -605.0
+      },
+      "gastos": 3995.0,
+      "gastosDelta": {
+        "diff": 180.0
+      },
+      "ingresos": 5400.0,
+      "ingresosDelta": {
+        "diff": -235.0
+      },
+      "saldo": 8655.0
+    }
+  }
 }

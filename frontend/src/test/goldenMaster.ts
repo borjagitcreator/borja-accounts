@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const GOLDEN_DIR = path.resolve(HERE, '../../../tests/golden_master');
+const GOLDEN_DIR = path.resolve(HERE, '../../../tests');
 
 function readJson(name: string) {
   return JSON.parse(readFileSync(path.join(GOLDEN_DIR, name), 'utf-8'));

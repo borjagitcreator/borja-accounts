@@ -25,7 +25,7 @@ import path from "node:path";
 import vm from "node:vm";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(HERE, "..", "..");
+const REPO_ROOT = path.resolve(HERE, "..");
 const FIXED_NOW = "2026-07-15T12:00:00.000Z"; // "hoy simulado" del golden master — ver docs/ARCHITECTURE.md §7
 
 function extractInlineScript(html) {

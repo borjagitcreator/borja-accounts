@@ -23,4 +23,4 @@ jobs:
         working-directory: frontend
       - run: uv sync
       - run: uv run python -c "import app.main"
-      - run: uv run pytest tests/golden_master -v
+      - run: uv run pytest tests -v

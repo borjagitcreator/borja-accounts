@@ -1,5 +1,11 @@
 # Golden master
 
+> Infraestructura **temporal** de la transición (ver `docs/ARCHITECTURE.md` §7).
+> Referencia `app.py`/`index.html` (vanilla, ya no servidos) a propósito -- es
+> lo que protege el refactor mientras dura. Se retira cuando el refactor se dé
+> por cerrado sin reservas; esta carpeta pasa a ser la suite de tests normal
+> del proyecto.
+
 Congela el comportamiento actual de `app.py` (Flask) e `index.html` (SPA vanilla)
 para que el refactor descrito en `docs/ARCHITECTURE.md` se pueda validar bloque
 a bloque sin arriesgar los datos reales (`openbank.csv`/`ibkr.csv`, en `.gitignore`).
@@ -23,12 +29,12 @@ Los snapshots (`snapshot_backend.json`, `snapshot_frontend.json`) capturan el co
 ## Regenerar (solo tras un cambio de comportamiento intencional y revisado)
 
 ```bash
-python tests/golden_master/generate_snapshot.py
-node tests/golden_master/run_frontend_harness.mjs > tests/golden_master/snapshot_frontend.json
+python tests/generate_snapshot.py
+node tests/run_frontend_harness.mjs > tests/snapshot_frontend.json
 ```
 
 ## Ejecutar
 
 ```bash
-pytest tests/golden_master -v
+pytest tests -v
 ```

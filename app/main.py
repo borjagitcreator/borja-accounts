@@ -64,7 +64,12 @@ ledger = LedgerService()
 # leyéndolo para poder re-derivar snapshot_frontend.json/
 # snapshot_frontend_values.json si el vanilla cambiara.
 FRONTEND_DIST = os.path.join(BASE_DIR, "frontend", "dist")
-app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+_FRONTEND_ASSETS = os.path.join(FRONTEND_DIST, "assets")
+if os.path.isdir(_FRONTEND_ASSETS):
+    app.mount("/assets", StaticFiles(directory=_FRONTEND_ASSETS), name="assets")
+# Si falta el build (checkout sin `npm run build` en frontend/), no se
+# monta nada aquí -- falla más adelante, con mensaje claro, en GET / o en
+# la aserción de scenario.py, no con un RuntimeError al importar el módulo.
 
 
 def _run(fn, *args, **kwargs):

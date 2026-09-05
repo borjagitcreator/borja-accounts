@@ -104,6 +104,10 @@ def run_scenario(repo_root):
             result["ibkr_carteras_report_3m"] = client.get(
                 "/api/accounts/ibkr/carteras?range=3m"
             ).json()
+            # panelFilters.transferencias por defecto en index.html es {type: '3m'}.
+            result["ibkr_transferencias_report_3m"] = client.get(
+                "/api/accounts/ibkr/transferencias?range=3m"
+            ).json()
 
             # --- Snapshot B: secuencia determinista de mutaciones ---
             steps = []

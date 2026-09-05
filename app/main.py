@@ -31,6 +31,7 @@ from application.use_cases.get_account_kpis import GetAccountKPIsUseCase
 from application.use_cases.get_betting_report import GetBettingReportUseCase
 from application.use_cases.get_ibkr_kpis import GetIbkrKPIsUseCase
 from application.use_cases.get_portfolio_report import GetPortfolioReportUseCase
+from application.use_cases.get_transfers_report import GetTransfersReportUseCase
 from application.use_cases.transfer_between_accounts import TransferBetweenAccountsUseCase
 from domain.exceptions import DomainError
 from domain.services.ledger import LedgerService
@@ -147,6 +148,16 @@ def get_ibkr_kpis(cuenta: str, period: str = "mes"):
         "enCarteras": kpi.en_carteras, "enCarterasCount": kpi.en_carteras_count,
         "pnl": kpi.pnl, "pnlDelta": {"diff": kpi.pnl_delta.diff},
     }
+
+
+@app.get("/api/accounts/{cuenta}/transferencias")
+def get_transferencias(cuenta: str, range: str = "all", year: int | None = None):
+    if cuenta not in ARCHIVOS:
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    report, err = _run(GetTransfersReportUseCase(repository).execute, cuenta, range, year, _reference_now())
+    if err:
+        return err
+    return report
 
 
 @app.get("/api/accounts/{cuenta}/carteras")

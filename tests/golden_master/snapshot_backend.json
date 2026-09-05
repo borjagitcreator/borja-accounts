@@ -560,6 +560,21 @@
       "saldo": 1205.0
     }
   },
+  "ibkr_transferencias_report_3m": {
+    "items": [
+      {
+        "Concepto": "Desde OPENBANK",
+        "Fecha": "2026-06-25 10:30:00",
+        "Total": 400.0,
+        "dir": "in",
+        "label": "← Openbank"
+      }
+    ],
+    "lifetimeNet": 400.0,
+    "lifetimeRec": 400.0,
+    "lifetimeSent": 0,
+    "totalCount": 1
+  },
   "initial_data_ibkr": [
     {
       "Concepto": "Apertura de cuenta",

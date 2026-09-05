@@ -83,6 +83,7 @@ function loadBackendFixture() {
     openbankApuestasReport3m: snap.openbank_apuestas_report_3m,
     ibkrKpisByPeriod: snap.ibkr_kpis_by_period,
     ibkrCarterasReport3m: snap.ibkr_carteras_report_3m,
+    ibkrTransferenciasReport3m: snap.ibkr_transferencias_report_3m,
   };
 }
 
@@ -154,7 +155,7 @@ function run() {
     result.ibkr_kpis[t] = api.kpiCardsIbkrHtml(fixture.ibkrKpisByPeriod[t]);
   }
   result.ibkr_inversiones_body = api.inversionesBody(fixture.ibkrCarterasReport3m);
-  result.ibkr_transferencias_body = api.transferenciasBody(fixture.ibkr);
+  result.ibkr_transferencias_body = api.transferenciasBody(fixture.ibkrTransferenciasReport3m);
   result.ibkr_movimientos_default = api.renderMovimientos(api.searchedMovs());
 
   api.chartSaldo(api.applyFilter(fixture.ibkr, { type: "all" }));

@@ -963,7 +963,7 @@ async function refreshPanel(panel) {
     chartCarteras(filtered);
   } else if (panel === 'transferencias') {
     const el = document.getElementById('transferencias-body');
-    if (el) el.innerHTML = transferenciasBody(filtered);
+    if (el) el.innerHTML = transferenciasBody(await fetchRangeReport('/api/accounts/ibkr/transferencias', panelFilters.transferencias));
   } else if (panel === 'apuestas') {
     const el = document.getElementById('apuestas-body');
     if (el) el.innerHTML = apuestasBody(await fetchRangeReport('/api/accounts/openbank/apuestas', panelFilters.apuestas));
@@ -1246,6 +1246,7 @@ async function render(acc, rows) {
   } else {
     const kpi = await fetchIbkrKpis(kpiType);
     const inversionesHtml = await renderInversiones();
+    const transferenciasHtml = await renderTransferencias();
     document.getElementById('main').innerHTML = `
       <div class="account-hero">
         ${markSvg('ik')}
@@ -1287,7 +1288,7 @@ async function render(acc, rows) {
         </div>
       </div>
 
-      ${renderTransferencias(applyFilter(rows, panelFilters.transferencias))}
+      ${transferenciasHtml}
       ${inversionesHtml}
       ${renderBottomGrid(acc)}
     `;
@@ -1303,29 +1304,6 @@ async function render(acc, rows) {
 // ─────────────────────────────────────────────
 // KPIs
 // ─────────────────────────────────────────────
-function isTransferIn(r) {
-  if (r.Tipo !== 'Ingreso') return false;
-  const c = (r.Concepto || '').toLowerCase();
-  return c.includes('desde openbank') || c.includes('desde ob');
-}
-
-function isTransferOut(r) {
-  if (r.Tipo === 'Transferencia') return true;
-  const c = (r.Concepto || '').toLowerCase();
-  return c.includes('a openbank') || c.includes('a ob');
-}
-
-function ibkrTransfers(rows) {
-  return rows
-    .filter(r => isTransferIn(r) || isTransferOut(r))
-    .map(r => ({
-      ...r,
-      dir: isTransferIn(r) ? 'in' : 'out',
-      label: isTransferIn(r) ? '← Openbank' : '→ Openbank',
-    }))
-    .sort((a, b) => b.Fecha.localeCompare(a.Fecha));
-}
-
 function kpiCardsIbkrHtml(kpi) {
   const lbl = kpiLabel();
   return `
@@ -1829,36 +1807,30 @@ async function renderInversiones() {
   </div>`;
 }
 
-function transferenciasBody(filteredRows) {
-  const allXfer = ibkrTransfers(data);
-  const list = ibkrTransfers(filteredRows);
-  const lifetimeRec = r2(allXfer.filter(r => r.dir === 'in').reduce((s, r) => s + r.Total, 0));
-  const lifetimeSent = r2(allXfer.filter(r => r.dir === 'out').reduce((s, r) => s + r.Total, 0));
-  const lifetimeNet = r2(lifetimeRec - lifetimeSent);
-
+function transferenciasBody(report) {
   const kpisHtml = `<div class="section-kpis">
     <div class="section-kpi">
       <div class="section-kpi-label">Recibido</div>
-      <div class="section-kpi-value num-pos">${eur(lifetimeRec)}</div>
+      <div class="section-kpi-value num-pos">${eur(report.lifetimeRec)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Enviado</div>
-      <div class="section-kpi-value">${eur(lifetimeSent)}</div>
+      <div class="section-kpi-value">${eur(report.lifetimeSent)}</div>
     </div>
     <div class="section-kpi">
       <div class="section-kpi-label">Neto aportado</div>
-      <div class="section-kpi-value ${lifetimeNet >= 0 ? 'num-pos' : 'num-neg'}">${eur(lifetimeNet)}</div>
+      <div class="section-kpi-value ${report.lifetimeNet >= 0 ? 'num-pos' : 'num-neg'}">${eur(report.lifetimeNet)}</div>
     </div>
   </div>`;
 
-  if (!allXfer.length) {
+  if (!report.totalCount) {
     return kpisHtml + '<div class="empty">Aún no hay transferencias con Openbank.</div>';
   }
-  if (!list.length) {
+  if (!report.items.length) {
     return kpisHtml + '<div class="empty">Sin transferencias en este período.</div>';
   }
 
-  const tbody = list.slice(0, 30).map(r => `<tr>
+  const tbody = report.items.map(r => `<tr>
     <td class="nowrap" style="color:var(--muted)">${fd(r.Fecha)}</td>
     <td><span class="xfer-dir ${r.dir === 'in' ? 'xfer-in' : 'xfer-out'}">${r.label}</span></td>
     <td>${esc(r.Concepto)}</td>
@@ -1871,7 +1843,8 @@ function transferenciasBody(filteredRows) {
   </table></div>`;
 }
 
-function renderTransferencias(rows) {
+async function renderTransferencias() {
+  const report = await fetchRangeReport('/api/accounts/ibkr/transferencias', panelFilters.transferencias);
   return `<div class="section" style="margin-bottom:14px;overflow:visible">
     <div class="section-head">
       <span class="section-title">Transferencias · Openbank ↔ IBKR</span>
@@ -1880,7 +1853,7 @@ function renderTransferencias(rows) {
         <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="openModal()">⇄ Nueva</button>
       </div>
     </div>
-    <div id="transferencias-body">${transferenciasBody(rows)}</div>
+    <div id="transferencias-body">${transferenciasBody(report)}</div>
   </div>`;
 }
 
